@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { Play, Pause, Square, Volume2, ChevronDown, AudioLines } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMultitrack, type TrackState } from "@/hooks/useMultitrack";
@@ -62,18 +62,12 @@ export function MultitrackPlayer({ tracks: trackItems }: Props) {
   const loaded   = tracks.length > 0;
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
-  // Detect iOS once (SSR-safe)
-  const isIOS = useMemo(() => {
-    if (typeof navigator === "undefined") return false;
-    return /iPad|iPhone|iPod/.test(navigator.userAgent);
-  }, []);
-
-  // On iOS, call unlock() synchronously BEFORE the async load —
-  // this is the only moment iOS accepts AudioContext.resume() as a user gesture.
+  // unlock() creates and resumes the AudioContext synchronously inside the gesture,
+  // then load() fetches & decodes the audio. Works on all browsers including iOS.
   const handleLoad = useCallback(() => {
-    if (isIOS) unlock();
+    unlock(); // must be the first call — no await before this
     load(trackItems);
-  }, [isIOS, unlock, load, trackItems]);
+  }, [unlock, load, trackItems]);
 
   const handleSeek = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => seek(Number(e.target.value)), [seek]);
@@ -131,10 +125,11 @@ export function MultitrackPlayer({ tracks: trackItems }: Props) {
             <div className="flex items-center gap-3">
               <button
                 onClick={() => {
-                  // On iOS, unlock() and play() MUST be called synchronously
-                  // within the same gesture — no await between them.
+                  // unlock() MUST be called first and synchronously in the gesture.
+                  // It calls ctx.resume() immediately; play() then starts sources
+                  // inside resume().then() — which iOS also allows.
                   if (!audioUnlocked) unlock();
-                  isPlaying ? pause() : play();
+                  if (isPlaying) { pause(); } else { play(); }
                 }}
                 disabled={!loaded || isLoading}
                 className="w-9 h-9 rounded-full bg-gold hover:bg-gold-300 disabled:opacity-40 flex items-center justify-center transition-colors shrink-0"
@@ -173,8 +168,8 @@ export function MultitrackPlayer({ tracks: trackItems }: Props) {
             />
           </div>
 
-          {/* ── iOS audio unlock banner ────────────────────────── */}
-          {isIOS && loaded && !audioUnlocked && (
+          {/* ── Audio unlock banner (shown on any device until audio is activated) */}
+          {loaded && !audioUnlocked && (
             <button
               onClick={unlock}
               className="w-full flex items-center justify-center gap-2.5 px-5 py-3.5 bg-gold/10 border-b border-gold/20 hover:bg-gold/20 transition-colors text-left"
@@ -187,11 +182,12 @@ export function MultitrackPlayer({ tracks: trackItems }: Props) {
                   Toca para activar el audio
                 </p>
                 <p className="text-[10px] text-gold/60 leading-tight mt-0.5">
-                  iOS requiere un toque para habilitar la reproducción
+                  Toca aquí o presiona Play para habilitar la reproducción
                 </p>
               </div>
             </button>
           )}
+
 
           {/* Loading */}
           {isLoading && (

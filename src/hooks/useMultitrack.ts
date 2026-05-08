@@ -13,82 +13,99 @@ export interface TrackState {
   error: string | null;
 }
 
-// Cross-browser decodeAudioData — uses callback form as fallback for iOS ≤ 14
+/**
+ * Cross-browser decodeAudioData.
+ *
+ * Older iOS Safari (≤ 14) doesn't support the Promise-based API and only
+ * exposes the callback form.  We detect which one works and use that one
+ * exclusively (never both, to avoid double-resolve races).
+ */
 function decodeAudio(ctx: AudioContext, buf: ArrayBuffer): Promise<AudioBuffer> {
-  return new Promise((resolve, reject) => {
-    // Modern browsers return a Promise; older iOS Safari only supports callbacks
-    const result = ctx.decodeAudioData(buf, resolve, reject);
-    // If the browser returned a proper Promise, chain it too
-    if (result && typeof result.then === "function") {
-      result.then(resolve).catch(reject);
+  return new Promise<AudioBuffer>((resolve, reject) => {
+    try {
+      // Pass success + error callbacks.  If the browser ALSO returns a Promise
+      // we intentionally ignore it — the callbacks are sufficient and universal.
+      ctx.decodeAudioData(
+        buf,
+        (decoded) => resolve(decoded),
+        (err) => reject(err ?? new Error("decodeAudioData failed")),
+      );
+    } catch (e) {
+      reject(e);
     }
   });
 }
 
 export function useMultitrack() {
-  const ctxRef = useRef<AudioContext | null>(null);
-  const volumeGainsRef = useRef<GainNode[]>([]);
-  const muteGainsRef = useRef<GainNode[]>([]);
+  const ctxRef           = useRef<AudioContext | null>(null);
+  const volumeGainsRef   = useRef<GainNode[]>([]);
+  const muteGainsRef     = useRef<GainNode[]>([]);
   const analyserNodesRef = useRef<AnalyserNode[]>([]);
-  const buffersRef = useRef<(AudioBuffer | null)[]>([]);
-  const sourcesRef = useRef<(AudioBufferSourceNode | null)[]>([]);
-  const startedAtRef = useRef(0);
-  const pausedAtRef = useRef(0);
-  const durationRef = useRef(0);
-  const rafRef = useRef(0);
+  const buffersRef       = useRef<(AudioBuffer | null)[]>([]);
+  const sourcesRef       = useRef<(AudioBufferSourceNode | null)[]>([]);
+  const startedAtRef     = useRef(0);
+  const pausedAtRef      = useRef(0);
+  const durationRef      = useRef(0);
+  const rafRef           = useRef(0);
 
-  const [tracks, setTracks] = useState<TrackState[]>([]);
-  const [analysers, setAnalysers] = useState<(AnalyserNode | null)[]>([]);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
+  const [tracks,        setTracks]        = useState<TrackState[]>([]);
+  const [analysers,     setAnalysers]     = useState<(AnalyserNode | null)[]>([]);
+  const [isPlaying,     setIsPlaying]     = useState(false);
+  const [isLoading,     setIsLoading]     = useState(false);
+  const [currentTime,   setCurrentTime]   = useState(0);
+  const [duration,      setDuration]      = useState(0);
   const [audioUnlocked, setAudioUnlocked] = useState(false);
 
+  // ── AudioContext factory ───────────────────────────────────────────────────
   const getCtx = useCallback((): AudioContext => {
     if (!ctxRef.current) {
-      ctxRef.current = new (
+      const AC =
         window.AudioContext ||
-        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
-      )();
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      ctxRef.current = new AC();
     }
     return ctxRef.current;
   }, []);
 
+  // ── unlock ────────────────────────────────────────────────────────────────
   /**
-   * unlock() — MUST be called synchronously inside a user gesture handler (no preceding await).
+   * MUST be called synchronously inside a touch / click handler.
    *
-   * iOS Safari only lifts the audio restriction when AudioContext.resume() is called
-   * as the FIRST action inside the touch/click call stack.  We also play a tiny
-   * silent buffer: this is the canonical "iOS audio unlock" trick that forces
-   * WebKit to mark the context as user-activated.
+   * iOS Safari only grants audio permission when AudioContext.resume() is the
+   * first thing on the call stack during a user gesture.  We also play a
+   * one-frame silent buffer — the canonical trick to fully wake WebKit's audio
+   * pipeline on older iOS versions.
+   *
+   * Returns a Promise that resolves once the context is confirmed "running".
+   * Callers that need to start audio right after can await this.
    */
-  const unlock = useCallback(() => {
+  const unlock = useCallback((): Promise<void> => {
     const ctx = getCtx();
 
-    const doUnlock = () => {
-      // Play a one-frame silent buffer — this is required on some iOS versions
-      // to fully transition the context from "suspended" to "running"
+    const activateContext = (): Promise<void> => {
+      // Play a 1-sample silent buffer — this is the reliable iOS unlock trick
       try {
         const silentBuf = ctx.createBuffer(1, 1, 22050);
         const silentSrc = ctx.createBufferSource();
         silentSrc.buffer = silentBuf;
         silentSrc.connect(ctx.destination);
         silentSrc.start(0);
-        silentSrc.stop(ctx.currentTime + 0.001);
       } catch { /* ignore */ }
 
       setAudioUnlocked(true);
+      return Promise.resolve();
     };
 
-    if (ctx.state === "suspended") {
-      // resume() is synchronous-enough on iOS when called directly in a gesture
-      ctx.resume().then(doUnlock).catch(doUnlock);
-    } else {
-      doUnlock();
+    if (ctx.state === "running") {
+      return activateContext();
     }
+
+    // resume() MUST be called synchronously here (we are still inside the gesture).
+    // The .then() executes after the context is confirmed running — iOS allows this.
+    return ctx.resume().then(activateContext).catch(activateContext);
   }, [getCtx]);
 
+  // ── helpers ───────────────────────────────────────────────────────────────
   const stopSources = useCallback(() => {
     sourcesRef.current.forEach(s => {
       try { s?.stop(); s?.disconnect(); } catch { /* already stopped */ }
@@ -106,7 +123,7 @@ export function useMultitrack() {
       const ctx = ctxRef.current;
       if (!ctx) return;
       const elapsed = ctx.currentTime - startedAtRef.current;
-      const clamped = Math.max(0, Math.min(elapsed, durationRef.current));
+      const clamped  = Math.max(0, Math.min(elapsed, durationRef.current));
       setCurrentTime(clamped);
       if (durationRef.current > 0 && elapsed >= durationRef.current) {
         setIsPlaying(false);
@@ -130,6 +147,7 @@ export function useMultitrack() {
     });
   }, []);
 
+  // ── load ──────────────────────────────────────────────────────────────────
   const load = useCallback(async (items: TrackItem[]) => {
     cancelAnimationFrame(rafRef.current);
     stopSources();
@@ -146,16 +164,16 @@ export function useMultitrack() {
     setIsLoading(true);
 
     const ctx = getCtx();
-    const volGains: GainNode[] = [];
-    const muteGains: GainNode[] = [];
+    const volGains:     GainNode[]     = [];
+    const muteGains:    GainNode[]     = [];
     const newAnalysers: AnalyserNode[] = [];
 
     items.forEach(() => {
-      const volG = ctx.createGain();
-      const muteG = ctx.createGain();
+      const volG     = ctx.createGain();
+      const muteG    = ctx.createGain();
       const analyser = ctx.createAnalyser();
       analyser.fftSize = 256;
-      // source → volG → muteG → analyser → destination
+      // chain: source → volGain → muteGain → analyser → destination
       volG.connect(muteG);
       muteG.connect(analyser);
       analyser.connect(ctx.destination);
@@ -164,10 +182,10 @@ export function useMultitrack() {
       newAnalysers.push(analyser);
     });
 
-    volumeGainsRef.current = volGains;
-    muteGainsRef.current = muteGains;
+    volumeGainsRef.current   = volGains;
+    muteGainsRef.current     = muteGains;
     analyserNodesRef.current = newAnalysers;
-    buffersRef.current = new Array(items.length).fill(null);
+    buffersRef.current       = new Array(items.length).fill(null);
 
     setTracks(items.map(item => ({
       name: item.name, url: item.url,
@@ -180,7 +198,6 @@ export function useMultitrack() {
         const res = await fetch(item.url);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const buf = await res.arrayBuffer();
-        // Use cross-browser decode helper (callback fallback for old iOS)
         return decodeAudio(ctx, buf);
       })
     );
@@ -208,53 +225,66 @@ export function useMultitrack() {
     setIsLoading(false);
   }, [getCtx, stopSources]);
 
+  // ── play ──────────────────────────────────────────────────────────────────
   /**
-   * play() — iOS-safe implementation.
+   * iOS-safe play().
    *
-   * KEY RULE: Never `await` before creating and starting AudioBufferSourceNodes
-   * inside a user gesture handler.  On iOS, the browser only considers the
-   * AudioContext "user-activated" for the synchronous duration of the gesture
-   * call stack.  Any `await` breaks that chain and the context goes back to
-   * "suspended", producing silence.
+   * The critical rule on iOS Safari:
+   *   • AudioContext.resume() must be called SYNCHRONOUSLY inside the gesture.
+   *   • AudioBufferSourceNode.start() must happen AFTER the context is confirmed
+   *     "running" — i.e., inside the resume().then() callback.
    *
-   * Strategy:
-   *  1. Fire ctx.resume() (do NOT await it).
-   *  2. Immediately create and start sources synchronously.
-   *  3. Let the resume Promise resolve in the background — by then the sources
-   *     are already scheduled and WebKit will play them.
+   * Calling start() before resume() resolves (even in the same tick) causes
+   * iOS to silently discard the scheduled audio.
+   *
+   * This function:
+   *  1. Calls resume() synchronously (satisfies iOS gesture requirement).
+   *  2. Starts the sources inside .then() (context is confirmed running).
    */
   const play = useCallback(() => {
     if (buffersRef.current.length === 0) return;
     const ctx = getCtx();
 
-    // Fire resume() but do NOT await — this preserves the synchronous gesture context
-    if (ctx.state !== "running") {
-      ctx.resume()
-        .then(() => setAudioUnlocked(true))
-        .catch(() => {});
-    } else {
+    const startSources = () => {
+      stopSources();
+      const offset    = Math.min(pausedAtRef.current, durationRef.current);
+      const startTime = ctx.currentTime + 0.05;
+
+      sourcesRef.current = buffersRef.current.map((buffer, i) => {
+        if (!buffer) return null;
+        const source = ctx.createBufferSource();
+        source.buffer = buffer;
+        source.connect(volumeGainsRef.current[i]);
+        source.start(startTime, offset);
+        return source;
+      });
+
+      // elapsed = ctx.currentTime - startedAtRef  →  startedAtRef = startTime - offset
+      startedAtRef.current = startTime - offset;
+      setIsPlaying(true);
+      startRaf();
+    };
+
+    if (ctx.state === "running") {
+      // Context already unlocked — start immediately
       setAudioUnlocked(true);
+      startSources();
+    } else {
+      // resume() called synchronously here (inside gesture) — iOS grants permission.
+      // startSources() runs in .then() — context is confirmed running at that point.
+      ctx.resume()
+        .then(() => {
+          setAudioUnlocked(true);
+          startSources();
+        })
+        .catch(() => {
+          // resume failed — try anyway (some iOS versions still play after a failed resume)
+          startSources();
+        });
     }
-
-    stopSources();
-    const offset = Math.min(pausedAtRef.current, durationRef.current);
-    const startTime = ctx.currentTime + 0.05;
-
-    sourcesRef.current = buffersRef.current.map((buffer, i) => {
-      if (!buffer) return null;
-      const source = ctx.createBufferSource();
-      source.buffer = buffer;
-      source.connect(volumeGainsRef.current[i]);
-      source.start(startTime, offset);
-      return source;
-    });
-
-    // startedAtRef is the "virtual zero" of context time: elapsed = ctx.currentTime - startedAtRef
-    startedAtRef.current = startTime - offset;
-    setIsPlaying(true);
-    startRaf();
   }, [getCtx, stopSources, startRaf]);
 
+  // ── pause / stop / seek ───────────────────────────────────────────────────
   const pause = useCallback(() => {
     const ctx = ctxRef.current;
     stopRaf();
@@ -292,6 +322,7 @@ export function useMultitrack() {
     }
   }, [getCtx, stopSources]);
 
+  // ── volume / mute / solo ──────────────────────────────────────────────────
   const setVolume = useCallback((index: number, value: number) => {
     const gain = volumeGainsRef.current[index];
     if (gain) {
@@ -317,6 +348,7 @@ export function useMultitrack() {
     });
   }, [applyMuteGains]);
 
+  // ── cleanup ───────────────────────────────────────────────────────────────
   useEffect(() => {
     return () => {
       cancelAnimationFrame(rafRef.current);
