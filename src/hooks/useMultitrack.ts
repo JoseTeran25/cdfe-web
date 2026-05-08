@@ -13,6 +13,18 @@ export interface TrackState {
   error: string | null;
 }
 
+// Cross-browser decodeAudioData — uses callback form as fallback for iOS ≤ 14
+function decodeAudio(ctx: AudioContext, buf: ArrayBuffer): Promise<AudioBuffer> {
+  return new Promise((resolve, reject) => {
+    // Modern browsers return a Promise; older iOS Safari only supports callbacks
+    const result = ctx.decodeAudioData(buf, resolve, reject);
+    // If the browser returned a proper Promise, chain it too
+    if (result && typeof result.then === "function") {
+      result.then(resolve).catch(reject);
+    }
+  });
+}
+
 export function useMultitrack() {
   const ctxRef = useRef<AudioContext | null>(null);
   const volumeGainsRef = useRef<GainNode[]>([]);
@@ -43,16 +55,37 @@ export function useMultitrack() {
     return ctxRef.current;
   }, []);
 
-  // Must be called synchronously inside a touch/click handler (no preceding await).
-  // iOS Safari only accepts resume() when it's the first thing in the gesture call stack.
+  /**
+   * unlock() — MUST be called synchronously inside a user gesture handler (no preceding await).
+   *
+   * iOS Safari only lifts the audio restriction when AudioContext.resume() is called
+   * as the FIRST action inside the touch/click call stack.  We also play a tiny
+   * silent buffer: this is the canonical "iOS audio unlock" trick that forces
+   * WebKit to mark the context as user-activated.
+   */
   const unlock = useCallback(() => {
     const ctx = getCtx();
-    if (ctx.state !== "running") {
-      ctx.resume()
-        .then(() => setAudioUnlocked(true))
-        .catch(() => {});
-    } else {
+
+    const doUnlock = () => {
+      // Play a one-frame silent buffer — this is required on some iOS versions
+      // to fully transition the context from "suspended" to "running"
+      try {
+        const silentBuf = ctx.createBuffer(1, 1, 22050);
+        const silentSrc = ctx.createBufferSource();
+        silentSrc.buffer = silentBuf;
+        silentSrc.connect(ctx.destination);
+        silentSrc.start(0);
+        silentSrc.stop(ctx.currentTime + 0.001);
+      } catch { /* ignore */ }
+
       setAudioUnlocked(true);
+    };
+
+    if (ctx.state === "suspended") {
+      // resume() is synchronous-enough on iOS when called directly in a gesture
+      ctx.resume().then(doUnlock).catch(doUnlock);
+    } else {
+      doUnlock();
     }
   }, [getCtx]);
 
@@ -147,7 +180,8 @@ export function useMultitrack() {
         const res = await fetch(item.url);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const buf = await res.arrayBuffer();
-        return ctx.decodeAudioData(buf);
+        // Use cross-browser decode helper (callback fallback for old iOS)
+        return decodeAudio(ctx, buf);
       })
     );
 
@@ -174,11 +208,31 @@ export function useMultitrack() {
     setIsLoading(false);
   }, [getCtx, stopSources]);
 
-  const play = useCallback(async () => {
+  /**
+   * play() — iOS-safe implementation.
+   *
+   * KEY RULE: Never `await` before creating and starting AudioBufferSourceNodes
+   * inside a user gesture handler.  On iOS, the browser only considers the
+   * AudioContext "user-activated" for the synchronous duration of the gesture
+   * call stack.  Any `await` breaks that chain and the context goes back to
+   * "suspended", producing silence.
+   *
+   * Strategy:
+   *  1. Fire ctx.resume() (do NOT await it).
+   *  2. Immediately create and start sources synchronously.
+   *  3. Let the resume Promise resolve in the background — by then the sources
+   *     are already scheduled and WebKit will play them.
+   */
+  const play = useCallback(() => {
     if (buffersRef.current.length === 0) return;
     const ctx = getCtx();
+
+    // Fire resume() but do NOT await — this preserves the synchronous gesture context
     if (ctx.state !== "running") {
-      await ctx.resume();
+      ctx.resume()
+        .then(() => setAudioUnlocked(true))
+        .catch(() => {});
+    } else {
       setAudioUnlocked(true);
     }
 

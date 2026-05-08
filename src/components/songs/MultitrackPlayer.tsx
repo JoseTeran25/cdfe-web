@@ -131,7 +131,9 @@ export function MultitrackPlayer({ tracks: trackItems }: Props) {
             <div className="flex items-center gap-3">
               <button
                 onClick={() => {
-                  if (isIOS && !audioUnlocked) unlock();
+                  // On iOS, unlock() and play() MUST be called synchronously
+                  // within the same gesture — no await between them.
+                  if (!audioUnlocked) unlock();
                   isPlaying ? pause() : play();
                 }}
                 disabled={!loaded || isLoading}
