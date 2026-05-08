@@ -99,6 +99,18 @@ export function useMultitrack() {
     setIsLoading(true);
 
     const ctx = getCtx();
+
+    // iOS Safari keeps AudioContext suspended until a user gesture triggers
+    // both a sound start AND resume(). Playing a 1-frame silent buffer here
+    // (synchronously, within the button-click gesture) unlocks it permanently.
+    try {
+      const silence = ctx.createBuffer(1, 1, ctx.sampleRate);
+      const silenceSrc = ctx.createBufferSource();
+      silenceSrc.buffer = silence;
+      silenceSrc.connect(ctx.destination);
+      silenceSrc.start(0);
+      if (ctx.state !== "running") await ctx.resume();
+    } catch { /* non-fatal — desktop ignores, iOS gets unlocked */ }
     const volGains: GainNode[] = [];
     const muteGains: GainNode[] = [];
     const newAnalysers: AnalyserNode[] = [];
@@ -163,7 +175,9 @@ export function useMultitrack() {
   const play = useCallback(async () => {
     if (buffersRef.current.length === 0) return;
     const ctx = getCtx();
-    if (ctx.state === "suspended") await ctx.resume();
+    // Call resume() synchronously before any await so iOS recognizes the user gesture
+    const resumePromise = ctx.state !== "running" ? ctx.resume() : Promise.resolve();
+    await resumePromise;
 
     stopSources();
     const offset = Math.min(pausedAtRef.current, durationRef.current);
