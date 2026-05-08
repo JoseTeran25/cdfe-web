@@ -31,6 +31,7 @@ export function useMultitrack() {
   const [isLoading, setIsLoading] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [audioUnlocked, setAudioUnlocked] = useState(false);
 
   const getCtx = useCallback((): AudioContext => {
     if (!ctxRef.current) {
@@ -41,6 +42,19 @@ export function useMultitrack() {
     }
     return ctxRef.current;
   }, []);
+
+  // Must be called synchronously inside a touch/click handler (no preceding await).
+  // iOS Safari only accepts resume() when it's the first thing in the gesture call stack.
+  const unlock = useCallback(() => {
+    const ctx = getCtx();
+    if (ctx.state !== "running") {
+      ctx.resume()
+        .then(() => setAudioUnlocked(true))
+        .catch(() => {});
+    } else {
+      setAudioUnlocked(true);
+    }
+  }, [getCtx]);
 
   const stopSources = useCallback(() => {
     sourcesRef.current.forEach(s => {
@@ -99,18 +113,6 @@ export function useMultitrack() {
     setIsLoading(true);
 
     const ctx = getCtx();
-
-    // iOS Safari keeps AudioContext suspended until a user gesture triggers
-    // both a sound start AND resume(). Playing a 1-frame silent buffer here
-    // (synchronously, within the button-click gesture) unlocks it permanently.
-    try {
-      const silence = ctx.createBuffer(1, 1, ctx.sampleRate);
-      const silenceSrc = ctx.createBufferSource();
-      silenceSrc.buffer = silence;
-      silenceSrc.connect(ctx.destination);
-      silenceSrc.start(0);
-      if (ctx.state !== "running") await ctx.resume();
-    } catch { /* non-fatal — desktop ignores, iOS gets unlocked */ }
     const volGains: GainNode[] = [];
     const muteGains: GainNode[] = [];
     const newAnalysers: AnalyserNode[] = [];
@@ -175,9 +177,10 @@ export function useMultitrack() {
   const play = useCallback(async () => {
     if (buffersRef.current.length === 0) return;
     const ctx = getCtx();
-    // Call resume() synchronously before any await so iOS recognizes the user gesture
-    const resumePromise = ctx.state !== "running" ? ctx.resume() : Promise.resolve();
-    await resumePromise;
+    if (ctx.state !== "running") {
+      await ctx.resume();
+      setAudioUnlocked(true);
+    }
 
     stopSources();
     const offset = Math.min(pausedAtRef.current, durationRef.current);
@@ -269,7 +272,7 @@ export function useMultitrack() {
   }, [stopSources]);
 
   return {
-    tracks, analysers, isPlaying, isLoading, currentTime, duration,
-    load, play, pause, stop, seek, setVolume, toggleMute, toggleSolo,
+    tracks, analysers, isPlaying, isLoading, currentTime, duration, audioUnlocked,
+    load, play, pause, stop, seek, setVolume, toggleMute, toggleSolo, unlock,
   };
 }
