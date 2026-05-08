@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
@@ -10,7 +11,6 @@ import {
   Users,
   ChevronLeft,
   ChevronRight,
-  Cross,
   Settings,
 } from "lucide-react";
 
@@ -87,8 +87,14 @@ export function Sidebar({
               collapsed && !mobileOpen && "justify-center"
             )}
           >
-            <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-gold/20 border border-gold/30 flex items-center justify-center group-hover:bg-gold/30 transition-colors">
-              <Cross className="w-4 h-4 text-gold" strokeWidth={2.5} />
+            <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-gold/20 border border-gold/30 flex items-center justify-center group-hover:bg-gold/30 transition-colors overflow-hidden">
+              <Image 
+                src="/images/logo.jpg" 
+                alt="CdFe Logo" 
+                width={32} 
+                height={32}
+                className="w-full h-full object-cover"
+              />
             </div>
             {(!collapsed || mobileOpen) && (
               <div className="min-w-0">
@@ -208,7 +214,7 @@ export function Sidebar({
             {(!collapsed || mobileOpen) && (
               <div className="min-w-0">
                 <p className="text-white text-xs font-medium truncate">
-                  Jose Daniel
+                  Cdfe Worship Sur
                 </p>
                 <p className="text-white/40 text-[10px] truncate">Director</p>
               </div>

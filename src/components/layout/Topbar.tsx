@@ -94,7 +94,7 @@ export function Topbar({ onMenuClick, sidebarCollapsed }: TopbarProps) {
           </div>
           <div className="hidden sm:block text-left">
             <p className="text-xs font-semibold text-navy leading-none">
-              Jose Daniel
+              Cdfe Worship Sur
             </p>
             <p className="text-[10px] text-gray-400 mt-0.5">Director</p>
           </div>

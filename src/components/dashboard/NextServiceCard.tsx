@@ -3,7 +3,7 @@
 import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Service } from "@/types";
+import type { ApiService, ServiceSongItem } from "@/lib/api";
 import {
   CalendarDays,
   Clock,
@@ -16,7 +16,7 @@ import Link from "next/link";
 import { formatDate, getDaysUntil, getServiceTypeLabel } from "@/lib/utils";
 
 interface NextServiceCardProps {
-  service: Service;
+  service: ApiService;
 }
 
 export function NextServiceCard({ service }: NextServiceCardProps) {
@@ -107,9 +107,9 @@ export function NextServiceCard({ service }: NextServiceCardProps) {
               Setlist
             </p>
             <div className="space-y-2">
-              {service.setlist.slice(0, 4).map((song, index) => (
+              {service.setlist.slice(0, 4).map((item, index) => (
                 <div
-                  key={song.id}
+                  key={item.id}
                   className="flex items-center gap-3 group"
                 >
                   <span className="w-5 h-5 rounded-full bg-navy/8 text-navy/50 text-xs font-bold flex items-center justify-center flex-shrink-0">
@@ -117,14 +117,14 @@ export function NextServiceCard({ service }: NextServiceCardProps) {
                   </span>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-800 truncate">
-                      {song.title}
+                      {item.song.title}
                     </p>
                     <p className="text-xs text-gray-400 truncate">
-                      {song.artist}
+                      {item.song.artist}
                     </p>
                   </div>
                   <Badge variant="navy" size="sm">
-                    {song.key}
+                    {item.song.key}
                   </Badge>
                 </div>
               ))}
