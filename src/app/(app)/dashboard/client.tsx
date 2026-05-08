@@ -62,7 +62,7 @@ export function DashboardClient() {
       <div className="space-y-6">
         <div className="animate-fade-in-up">
           <h2 className="font-display font-bold text-2xl text-navy">
-            ¡Buen día, José Daniel! 👋
+            ¡Buen día, Adorador! 👋
           </h2>
           <p className="text-gray-400 text-sm mt-1">
             Cargando datos del ministerio...
@@ -80,7 +80,7 @@ export function DashboardClient() {
       <div className="space-y-6">
         <div className="animate-fade-in-up">
           <h2 className="font-display font-bold text-2xl text-navy">
-            ¡Buen día, José Daniel! 👋
+            ¡Buen día, Adorador! 👋
           </h2>
           <p className="text-gray-400 text-sm mt-1">
             Resumen del ministerio de alabanza.
@@ -143,7 +143,7 @@ export function DashboardClient() {
       {/* Greeting */}
       <div className="animate-fade-in-up">
         <h2 className="font-display font-bold text-2xl text-navy">
-          ¡Buen día, José Daniel! 👋
+          ¡Buen día, Adorador! 👋
         </h2>
         <p className="text-gray-400 text-sm mt-1">
           Aquí tienes el resumen del ministerio de alabanza.

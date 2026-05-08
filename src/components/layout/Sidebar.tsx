@@ -99,7 +99,7 @@ export function Sidebar({
             {(!collapsed || mobileOpen) && (
               <div className="min-w-0">
                 <p className="font-display font-bold text-white text-sm leading-none">
-                  CdFe App
+                  Worship Sur
                 </p>
                 <p className="text-white/50 text-[10px] mt-0.5 truncate">
                   Comunidad de Fe Sur
