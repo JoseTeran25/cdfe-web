@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { Toast, type ToastData } from "@/components/ui/Toast";
-import type { SongStatus, CreateSongDto, TrackItem } from "@/types";
+import type { SongStatus, SongCategory, CreateSongDto, TrackItem } from "@/types";
 
 // ── Options ────────────────────────────────────────────────
 const KEY_OPTIONS = [
@@ -24,6 +24,12 @@ const STATUS_OPTIONS = [
   { value: "PENDIENTE", label: "Pendiente" },
 ];
 
+const CATEGORY_OPTIONS = [
+  { value: "", label: "Sin categoría" },
+  { value: "ALABANZA", label: "Alabanza" },
+  { value: "ADORACION", label: "Adoración" },
+];
+
 const TRACK_TYPE_OPTIONS = [
   { value: "click",  label: "Click / Metrónomo" },
   { value: "guide",  label: "Guía" },
@@ -33,7 +39,7 @@ const TRACK_TYPE_OPTIONS = [
 
 const BLANK: CreateSongDto = {
   title: "", artist: "", key: "G", status: "PENDIENTE",
-  bpm: undefined, lyrics: "", sequenceUrl: [],
+  category: undefined, bpm: undefined, lyrics: "", sequenceUrl: [],
 };
 
 export default function NewSongPage() {
@@ -155,6 +161,12 @@ export default function NewSongPage() {
             label="Estado" required value={form.status ?? "PENDIENTE"}
             onChange={e => set("status", e.target.value as SongStatus)}
             options={STATUS_OPTIONS}
+          />
+          <Select
+            label="Categoría"
+            value={form.category ?? ""}
+            onChange={e => set("category", (e.target.value as SongCategory) || undefined)}
+            options={CATEGORY_OPTIONS}
           />
         </div>
       </section>
