@@ -37,6 +37,7 @@ export function getRoleLabel(role: string): string {
     DIRECTOR: "Director",
     MUSICO: "Músico",
     VOCALISTA: "Vocalista",
+    MULTIMEDIA: "Multimedia",
   };
   return labels[role] ?? role;
 }
@@ -52,6 +53,7 @@ export function getInstrumentLabel(instrument: string): string {
     TROMPETA: "Trompeta",
     VOZ_PRINCIPAL: "Voz Principal",
     VOZ_SECUNDARIA: "Voz Secundaria",
+    MEDIOS: "Medios",
     OTRO: "Otro",
   };
   return labels[instrument] ?? instrument;

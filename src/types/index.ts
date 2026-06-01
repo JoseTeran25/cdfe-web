@@ -2,7 +2,7 @@
 // CdFe App — Interfaces TypeScript
 // ============================================================
 
-export type Role = "ADMIN" | "DIRECTOR" | "MUSICO" | "VOCALISTA";
+export type Role = "ADMIN" | "DIRECTOR" | "MUSICO" | "VOCALISTA" | "MULTIMEDIA";
 
 export type SongStatus = "ACTIVA" | "PENDIENTE";
 
@@ -20,6 +20,7 @@ export type Instrument =
   | "TROMPETA"
   | "VOZ_PRINCIPAL"
   | "VOZ_SECUNDARIA"
+  | "MEDIOS"
   | "OTRO";
 
 // ---- Modelos Base ----

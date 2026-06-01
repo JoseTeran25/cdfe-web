@@ -7,8 +7,11 @@ import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 
 const ROLE_OPTIONS = [
-  { value: "ADMIN", label: "Administrador" }, { value: "DIRECTOR", label: "Director" },
-  { value: "MUSICO", label: "Músico" }, { value: "VOCALISTA", label: "Vocalista" },
+  { value: "ADMIN", label: "Administrador" }, 
+  { value: "DIRECTOR", label: "Director" },
+  { value: "MUSICO", label: "Músico" }, 
+  { value: "VOCALISTA", label: "Vocalista" },
+  { value: "MULTIMEDIA", label: "Multimedia" },
 ];
 const INSTRUMENT_OPTIONS = [
   { value: "", label: "Sin instrumento" }, { value: "GUITARRA", label: "Guitarra" },
@@ -16,7 +19,7 @@ const INSTRUMENT_OPTIONS = [
   { value: "TECLADO", label: "Teclado" }, { value: "PIANO", label: "Piano" },
   { value: "VIOLIN", label: "Violín" }, { value: "TROMPETA", label: "Trompeta" },
   { value: "VOZ_PRINCIPAL", label: "Voz Principal" }, { value: "VOZ_SECUNDARIA", label: "Voz Secundaria" },
-  { value: "OTRO", label: "Otro" },
+  { value: "MEDIOS", label: "Medios" }, { value: "OTRO", label: "Otro" },
 ];
 
 type FormState = CreateUserDto & { password: string };
