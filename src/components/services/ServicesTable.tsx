@@ -13,6 +13,12 @@ interface Props {
   onDelete: (service: ApiService) => void;
 }
 
+function isPast(dateStr: string): boolean {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return new Date(dateStr) < today;
+}
+
 export function ServicesTable({ services, loading, onEdit, onDelete }: Props) {
   if (loading) return (
     <Card padding="none">
@@ -40,50 +46,64 @@ export function ServicesTable({ services, loading, onEdit, onDelete }: Props) {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-surface-border bg-navy/[3%]">
-              {["Fecha", "Tipo", "Título", "Canciones", "Equipo", "Acciones"].map(h => (
+              {["Fecha", "Tipo", "Título", "Canciones", "Equipo", "Estado", "Acciones"].map(h => (
                 <th key={h} className="text-left px-5 py-3 text-xs font-semibold text-navy/60 uppercase tracking-wide whitespace-nowrap">{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {services.map((s, i) => (
-              <tr key={s.id} className={`border-b border-surface-border last:border-0 hover:bg-surface transition-colors ${i % 2 === 1 ? "bg-gray-50/50" : ""}`}>
-                <td className="px-5 py-3.5 font-semibold text-gray-800 whitespace-nowrap">
-                  {formatDate(s.date, { weekday: undefined, month: "short", day: "numeric", year: "numeric" })}
-                </td>
-                <td className="px-5 py-3.5">
-                  <Badge variant={s.type === "DOMINGO" ? "navy" : "gold"} size="sm">
-                    {getServiceTypeLabel(s.type)}
-                  </Badge>
-                </td>
-                <td className="px-5 py-3.5 text-gray-600">{s.title ?? <span className="text-gray-300">—</span>}</td>
-                <td className="px-5 py-3.5">
-                  <div className="flex items-center gap-1.5 text-gray-500">
-                    <Music2 className="w-3.5 h-3.5" /> {s.setlist.length}
-                  </div>
-                </td>
-                <td className="px-5 py-3.5">
-                  <div className="flex items-center gap-1.5 text-gray-500">
-                    <Users className="w-3.5 h-3.5" /> {s.team.length}
-                  </div>
-                </td>
-                <td className="px-5 py-3.5">
-                  <div className="flex items-center gap-1">
-                    {/* Navigate to detail page */}
-                    <Link href={`/services/${s.id}`}
-                      className="p-1.5 rounded-lg text-gray-400 hover:text-navy hover:bg-navy/5 transition-colors" title="Ver y configurar">
-                      <ArrowRight className="w-4 h-4" />
-                    </Link>
-                    <button onClick={() => onEdit(s)} className="p-1.5 rounded-lg text-gray-400 hover:text-navy hover:bg-navy/5 transition-colors" title="Editar datos">
-                      <Pencil className="w-4 h-4" />
-                    </button>
-                    <button onClick={() => onDelete(s)} className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors" title="Eliminar">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+            {services.map((s, i) => {
+              const past = isPast(s.date);
+              return (
+                <tr
+                  key={s.id}
+                  className={`border-b border-surface-border last:border-0 transition-colors
+                    ${past ? "opacity-50 bg-gray-50/80" : "hover:bg-surface"}
+                    ${!past && i % 2 === 1 ? "bg-gray-50/50" : ""}
+                  `}
+                >
+                  <td className="px-5 py-3.5 font-semibold text-gray-800 whitespace-nowrap">
+                    {formatDate(s.date, { weekday: undefined, month: "short", day: "numeric", year: "numeric" })}
+                  </td>
+                  <td className="px-5 py-3.5">
+                    <Badge variant={s.type === "DOMINGO" ? "navy" : "gold"} size="sm">
+                      {getServiceTypeLabel(s.type)}
+                    </Badge>
+                  </td>
+                  <td className="px-5 py-3.5 text-gray-600">{s.title ?? <span className="text-gray-300">—</span>}</td>
+                  <td className="px-5 py-3.5">
+                    <div className="flex items-center gap-1.5 text-gray-500">
+                      <Music2 className="w-3.5 h-3.5" /> {s.setlist.length}
+                    </div>
+                  </td>
+                  <td className="px-5 py-3.5">
+                    <div className="flex items-center gap-1.5 text-gray-500">
+                      <Users className="w-3.5 h-3.5" /> {s.team.length}
+                    </div>
+                  </td>
+                  <td className="px-5 py-3.5">
+                    {past
+                      ? <Badge variant="pending" size="sm">Pasado</Badge>
+                      : <Badge variant="success" dot size="sm">Próximo</Badge>
+                    }
+                  </td>
+                  <td className="px-5 py-3.5">
+                    <div className="flex items-center gap-1">
+                      <Link href={`/services/${s.id}`}
+                        className="p-1.5 rounded-lg text-gray-400 hover:text-navy hover:bg-navy/5 transition-colors" title="Ver y configurar">
+                        <ArrowRight className="w-4 h-4" />
+                      </Link>
+                      <button onClick={() => onEdit(s)} className="p-1.5 rounded-lg text-gray-400 hover:text-navy hover:bg-navy/5 transition-colors" title="Editar datos">
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => onDelete(s)} className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors" title="Eliminar">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
