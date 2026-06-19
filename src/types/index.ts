@@ -2,9 +2,11 @@
 // CdFe App — Interfaces TypeScript
 // ============================================================
 
-export type Role = "ADMIN" | "DIRECTOR" | "MUSICO" | "VOCALISTA";
+export type Role = "ADMIN" | "DIRECTOR" | "MUSICO" | "VOCALISTA" | "MULTIMEDIA";
 
 export type SongStatus = "ACTIVA" | "PENDIENTE";
+
+export type SongCategory = "ALABANZA" | "ADORACION";
 
 export type ServiceType = "DOMINGO" | "MIERCOLES";
 
@@ -18,6 +20,7 @@ export type Instrument =
   | "TROMPETA"
   | "VOZ_PRINCIPAL"
   | "VOZ_SECUNDARIA"
+  | "MEDIOS"
   | "OTRO";
 
 // ---- Modelos Base ----
@@ -47,6 +50,7 @@ export interface Song {
   lyrics?: string; // Markdown / ChordPro
   bpm?: number;
   status: SongStatus;
+  category?: SongCategory;
   sequenceUrl?: TrackItem[]; // JSON con tracks
   tags?: string[];
   createdAt: string;
@@ -82,6 +86,7 @@ export interface CreateSongDto {
   lyrics?: string;
   bpm?: number;
   status?: SongStatus;
+  category?: SongCategory;
   sequenceUrl?: TrackItem[];
   tags?: string[];
 }

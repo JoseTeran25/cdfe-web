@@ -12,6 +12,11 @@ interface Props {
   onDelete: (song: Song) => void;
 }
 
+const CATEGORY_LABEL: Record<string, { label: string; variant: string }> = {
+  ALABANZA:  { label: "Alabanza",  variant: "gold" },
+  ADORACION: { label: "Adoración", variant: "navy" },
+};
+
 export function SongsTable({ songs, loading, onEdit, onDelete }: Props) {
   if (loading) return (
     <Card padding="none">
@@ -39,38 +44,47 @@ export function SongsTable({ songs, loading, onEdit, onDelete }: Props) {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-surface-border bg-navy/[3%]">
-              {["Título", "Artista", "Tono", "BPM", "Estado", "Acciones"].map(h => (
+              {["Título", "Artista", "Tono", "BPM", "Categoría", "Estado", "Acciones"].map(h => (
                 <th key={h} className="text-left px-5 py-3 text-xs font-semibold text-navy/60 uppercase tracking-wide whitespace-nowrap">{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {songs.map((s, i) => (
-              <tr key={s.id} className={`border-b border-surface-border last:border-0 hover:bg-surface transition-colors ${i % 2 === 1 ? "bg-gray-50/50" : ""}`}>
-                <td className="px-5 py-3.5 font-semibold text-gray-800">{s.title}</td>
-                <td className="px-5 py-3.5 text-gray-500">{s.artist}</td>
-                <td className="px-5 py-3.5"><Badge variant="navy" size="sm">{s.key}</Badge></td>
-                <td className="px-5 py-3.5 text-gray-500">{s.bpm ?? "—"}</td>
-                <td className="px-5 py-3.5">
-                  <Badge variant={s.status === "ACTIVA" ? "success" : "pending"} dot size="sm">
-                    {s.status === "ACTIVA" ? "Activa" : "Pendiente"}
-                  </Badge>
-                </td>
-                <td className="px-5 py-3.5">
-                  <div className="flex items-center gap-1">
-                    <Link href={`/songs/${s.id}`} className="p-1.5 rounded-lg text-gray-400 hover:text-navy hover:bg-navy/5 transition-colors" title="Ver detalle">
-                      <Eye className="w-4 h-4" />
-                    </Link>
-                    <button onClick={() => onEdit(s)} className="p-1.5 rounded-lg text-gray-400 hover:text-navy hover:bg-navy/5 transition-colors" title="Editar">
-                      <Pencil className="w-4 h-4" />
-                    </button>
-                    <button onClick={() => onDelete(s)} className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors" title="Eliminar">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+            {songs.map((s, i) => {
+              const cat = s.category ? CATEGORY_LABEL[s.category] : null;
+              return (
+                <tr key={s.id} className={`border-b border-surface-border last:border-0 hover:bg-surface transition-colors ${i % 2 === 1 ? "bg-gray-50/50" : ""}`}>
+                  <td className="px-5 py-3.5 font-semibold text-gray-800">{s.title}</td>
+                  <td className="px-5 py-3.5 text-gray-500">{s.artist}</td>
+                  <td className="px-5 py-3.5"><Badge variant="navy" size="sm">{s.key}</Badge></td>
+                  <td className="px-5 py-3.5 text-gray-500">{s.bpm ?? "—"}</td>
+                  <td className="px-5 py-3.5">
+                    {cat
+                      ? <Badge variant={cat.variant as any} size="sm">{cat.label}</Badge>
+                      : <span className="text-xs text-gray-300">—</span>
+                    }
+                  </td>
+                  <td className="px-5 py-3.5">
+                    <Badge variant={s.status === "ACTIVA" ? "success" : "pending"} dot size="sm">
+                      {s.status === "ACTIVA" ? "Activa" : "Pendiente"}
+                    </Badge>
+                  </td>
+                  <td className="px-5 py-3.5">
+                    <div className="flex items-center gap-1">
+                      <Link href={`/songs/${s.id}`} className="p-1.5 rounded-lg text-gray-400 hover:text-navy hover:bg-navy/5 transition-colors" title="Ver detalle">
+                        <Eye className="w-4 h-4" />
+                      </Link>
+                      <button onClick={() => onEdit(s)} className="p-1.5 rounded-lg text-gray-400 hover:text-navy hover:bg-navy/5 transition-colors" title="Editar">
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => onDelete(s)} className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors" title="Eliminar">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

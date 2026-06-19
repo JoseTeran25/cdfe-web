@@ -9,13 +9,14 @@ import { SongModal } from "@/components/songs/SongModal";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Toast, type ToastData } from "@/components/ui/Toast";
 import { Button } from "@/components/ui/Button";
-import type { Song, SongStatus, CreateSongDto } from "@/types";
+import type { Song, SongStatus, SongCategory, CreateSongDto } from "@/types";
 
 export default function SongsPage() {
   const router = useRouter();
   const { songs, loading, fetch, update, remove } = useSongs();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<SongStatus | "">("");
+  const [categoryFilter, setCategoryFilter] = useState<SongCategory | "">("");
   const [editModal, setEditModal] = useState<Song | null>(null);
   const [deleting, setDeleting] = useState<Song | null>(null);
   const [removing, setRemoving] = useState(false);
@@ -24,6 +25,9 @@ export default function SongsPage() {
   useEffect(() => {
     fetch({ status: statusFilter || undefined, search: search || undefined });
   }, [fetch, statusFilter, search]);
+
+  const filteredSongs = songs.filter(s =>
+  categoryFilter ? s.category === categoryFilter : true);
 
   const handleUpdate = async (data: CreateSongDto, id?: string) => {
     if (!id) return;
@@ -74,19 +78,30 @@ export default function SongsPage() {
             className="w-full pl-9 pr-4 py-2.5 text-sm border border-surface-border rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-navy/10 focus:border-navy/40 transition-[box-shadow,border-color]"
           />
         </div>
-        <select
-          value={statusFilter}
-          onChange={e => setStatusFilter(e.target.value as SongStatus | "")}
-          className="px-3 py-2.5 text-sm border border-surface-border rounded-xl bg-white focus:outline-none"
-        >
-          <option value="">Todos los estados</option>
-          <option value="ACTIVA">Activas</option>
-          <option value="PENDIENTE">Pendientes</option>
-        </select>
+        <div className="flex gap-3">
+          <select
+            value={statusFilter}
+            onChange={e => setStatusFilter(e.target.value as SongStatus | "")}
+            className="px-3 py-2.5 text-sm border border-surface-border rounded-xl bg-white focus:outline-none"
+          >
+            <option value="">Todos los estados</option>
+            <option value="ACTIVA">Activas</option>
+            <option value="PENDIENTE">Pendientes</option>
+          </select>
+          <select
+            value={categoryFilter}
+            onChange={e => setCategoryFilter(e.target.value as SongCategory | "")}
+            className="px-3 py-2.5 text-sm border border-surface-border rounded-xl bg-white focus:outline-none"
+          >
+            <option value="">Todas las categorías</option>
+            <option value="ALABANZA">Alabanza</option>
+            <option value="ADORACION">Adoración</option>
+          </select>
+        </div>
       </div>
 
       <SongsTable
-        songs={songs}
+        songs={filteredSongs}
         loading={loading}
         onEdit={s => setEditModal(s)}
         onDelete={s => setDeleting(s)}

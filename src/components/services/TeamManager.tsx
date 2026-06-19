@@ -13,7 +13,7 @@ const INSTRUMENT_OPTIONS = [
   { value: "BATERIA", label: "Batería" }, { value: "TECLADO", label: "Teclado" },
   { value: "PIANO", label: "Piano" }, { value: "VIOLIN", label: "Violín" },
   { value: "TROMPETA", label: "Trompeta" }, { value: "VOZ_PRINCIPAL", label: "Voz Principal" },
-  { value: "VOZ_SECUNDARIA", label: "Voz Secundaria" }, { value: "OTRO", label: "Otro" },
+  { value: "VOZ_SECUNDARIA", label: "Voz Secundaria" }, { value: "MEDIOS", label: "Medios" },{ value: "OTRO", label: "Otro" },
 ];
 
 interface Props {
