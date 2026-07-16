@@ -109,6 +109,30 @@ export interface CreateUserDto {
   avatarUrl?: string;
 }
 
+// ---- No estás solo (landing de acompañamiento) ----
+
+export type ContactMethod = "WHATSAPP" | "LLAMADA" | "MENSAJE_TEXTO";
+
+export interface SupportRequest {
+  id: string;
+  name: string;
+  contact: string;
+  contactMethod: ContactMethod;
+  situation?: string;
+  consent: boolean;
+  contacted: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateSupportRequestDto {
+  name: string;
+  contact: string;
+  contactMethod: ContactMethod;
+  situation?: string;
+  consent: boolean;
+}
+
 // ---- Dashboard ----
 
 export interface DashboardStats {
