@@ -1,4 +1,4 @@
-import type { Song, User, Service, CreateSongDto, CreateUserDto, CreateServiceDto, SongStatus, Instrument } from '@/types';
+import type { Song, User, Service, CreateSongDto, CreateUserDto, CreateServiceDto, SongStatus, Instrument, SupportRequest, CreateSupportRequestDto } from '@/types';
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
 
@@ -54,6 +54,14 @@ export const filesApi = {
     }
     return res.json();
   },
+};
+
+export const supportRequestsApi = {
+  create: (d: CreateSupportRequestDto) =>
+    http<SupportRequest>('/support-requests', { method: 'POST', body: JSON.stringify(d) }),
+  getAll: () => http<SupportRequest[]>('/support-requests'),
+  setContacted: (id: string, contacted: boolean) =>
+    http<SupportRequest>(`/support-requests/${id}`, { method: 'PATCH', body: JSON.stringify({ contacted }) }),
 };
 
 export const servicesApi = {

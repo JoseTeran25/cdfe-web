@@ -4,15 +4,18 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { useEffect, useState } from "react";
 import {
   LayoutDashboard,
   Music2,
   CalendarDays,
   Users,
+  HeartHandshake,
   ChevronLeft,
   ChevronRight,
   Settings,
 } from "lucide-react";
+import { supportRequestsApi } from "@/lib/api";
 
 interface NavItem {
   label: string;
@@ -26,6 +29,7 @@ const navItems: NavItem[] = [
   { label: "Canciones", href: "/songs", icon: Music2 },
   { label: "Servicios", href: "/services", icon: CalendarDays },
   { label: "Equipo", href: "/team", icon: Users },
+  { label: "No estás solo", href: "/support-requests", icon: HeartHandshake },
 ];
 
 const bottomNavItems: NavItem[] = [
@@ -46,6 +50,14 @@ export function Sidebar({
   onMobileClose,
 }: SidebarProps) {
   const pathname = usePathname();
+  const [pendingSupportCount, setPendingSupportCount] = useState(0);
+
+  useEffect(() => {
+    supportRequestsApi
+      .getAll()
+      .then(reqs => setPendingSupportCount(reqs.filter(r => !r.contacted).length))
+      .catch(() => {});
+  }, [pathname]);
 
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(href + "/");
@@ -123,6 +135,10 @@ export function Sidebar({
           {navItems.map((item) => {
             const active = isActive(item.href);
             const Icon = item.icon;
+            const badge =
+              item.href === "/support-requests" && pendingSupportCount > 0
+                ? String(pendingSupportCount)
+                : item.badge;
             return (
               <Link
                 key={item.href}
@@ -154,9 +170,9 @@ export function Sidebar({
                   <span className="truncate">{item.label}</span>
                 )}
 
-                {item.badge && (!collapsed || mobileOpen) && (
+                {badge && (!collapsed || mobileOpen) && (
                   <span className="ml-auto text-[10px] bg-gold text-navy-950 font-bold px-1.5 py-0.5 rounded-full">
-                    {item.badge}
+                    {badge}
                   </span>
                 )}
 

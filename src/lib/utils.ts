@@ -63,6 +63,15 @@ export function getServiceTypeLabel(type: string): string {
   return type === "DOMINGO" ? "Domingo" : "Miércoles";
 }
 
+export function getContactMethodLabel(method: string): string {
+  const labels: Record<string, string> = {
+    WHATSAPP: "WhatsApp",
+    LLAMADA: "Llamada",
+    MENSAJE_TEXTO: "Mensaje de texto",
+  };
+  return labels[method] ?? method;
+}
+
 export function getDaysUntil(dateString: string): number {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
