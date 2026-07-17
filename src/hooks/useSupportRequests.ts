@@ -19,5 +19,10 @@ export function useSupportRequests() {
     return r;
   };
 
-  return { requests, loading, fetch, setContacted };
+  const remove = async (id: string) => {
+    await supportRequestsApi.remove(id);
+    setRequests(prev => prev.filter(x => x.id !== id));
+  };
+
+  return { requests, loading, fetch, setContacted, remove };
 }

@@ -4,15 +4,18 @@ import { useState, useEffect } from "react";
 import { useSupportRequests } from "@/hooks/useSupportRequests";
 import { SupportRequestsTable } from "@/components/support/SupportRequestsTable";
 import { SupportRequestDetailModal } from "@/components/support/SupportRequestDetailModal";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Toast, type ToastData } from "@/components/ui/Toast";
 import type { SupportRequest } from "@/types";
 
 type StatusFilter = "" | "pending" | "contacted";
 
 export default function SupportRequestsPage() {
-  const { requests, loading, fetch, setContacted } = useSupportRequests();
+  const { requests, loading, fetch, setContacted, remove } = useSupportRequests();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("");
   const [viewing, setViewing] = useState<SupportRequest | null>(null);
+  const [deleting, setDeleting] = useState<SupportRequest | null>(null);
+  const [removing, setRemoving] = useState(false);
   const [toast, setToast] = useState<ToastData | null>(null);
 
   useEffect(() => {
@@ -37,6 +40,21 @@ export default function SupportRequestsPage() {
       setViewing(prev => (prev && prev.id === r.id ? updated : prev));
     } catch (e: unknown) {
       setToast({ type: "error", message: e instanceof Error ? e.message : "Error" });
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleting) return;
+    setRemoving(true);
+    try {
+      await remove(deleting.id);
+      setToast({ type: "success", message: "Solicitud eliminada" });
+      setDeleting(null);
+      setViewing(prev => (prev && prev.id === deleting.id ? null : prev));
+    } catch (e: unknown) {
+      setToast({ type: "error", message: e instanceof Error ? e.message : "Error" });
+    } finally {
+      setRemoving(false);
     }
   };
 
@@ -74,12 +92,22 @@ export default function SupportRequestsPage() {
         loading={loading}
         onView={setViewing}
         onToggleContacted={handleToggleContacted}
+        onDelete={setDeleting}
       />
 
       <SupportRequestDetailModal
         request={viewing}
         onClose={() => setViewing(null)}
         onToggleContacted={handleToggleContacted}
+        onDelete={r => setDeleting(r)}
+      />
+
+      <ConfirmDialog
+        open={!!deleting}
+        onClose={() => setDeleting(null)}
+        onConfirm={handleDelete}
+        loading={removing}
+        message={`¿Eliminar la solicitud de "${deleting?.name}"? Esta acción no se puede deshacer.`}
       />
 
       {toast && <Toast {...toast} onClose={() => setToast(null)} />}

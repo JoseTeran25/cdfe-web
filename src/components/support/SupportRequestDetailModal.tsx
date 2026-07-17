@@ -1,5 +1,5 @@
 "use client";
-import { Phone, Calendar, MessageSquareText } from "lucide-react";
+import { Phone, Calendar, MessageSquareText, Trash2 } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -10,9 +10,10 @@ interface Props {
   request: SupportRequest | null;
   onClose: () => void;
   onToggleContacted: (request: SupportRequest) => void;
+  onDelete: (request: SupportRequest) => void;
 }
 
-export function SupportRequestDetailModal({ request, onClose, onToggleContacted }: Props) {
+export function SupportRequestDetailModal({ request, onClose, onToggleContacted, onDelete }: Props) {
   if (!request) return null;
 
   return (
@@ -21,12 +22,17 @@ export function SupportRequestDetailModal({ request, onClose, onToggleContacted 
       onClose={onClose}
       title={request.name}
       footer={
-        <Button
-          variant={request.contacted ? "secondary" : "primary"}
-          onClick={() => onToggleContacted(request)}
-        >
-          {request.contacted ? "Marcar como pendiente" : "Marcar como contactado"}
-        </Button>
+        <>
+          <Button variant="danger" onClick={() => onDelete(request)} className="mr-auto">
+            <Trash2 className="w-4 h-4" /> Eliminar
+          </Button>
+          <Button
+            variant={request.contacted ? "secondary" : "primary"}
+            onClick={() => onToggleContacted(request)}
+          >
+            {request.contacted ? "Marcar como pendiente" : "Marcar como contactado"}
+          </Button>
+        </>
       }
     >
       <div className="space-y-5">

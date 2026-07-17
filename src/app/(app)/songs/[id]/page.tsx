@@ -161,6 +161,8 @@ export default function SongDetailPage() {
             originalKey={song.key}
             semitones={semitones}
             onSemitonesChange={setSemitones}
+            title={song.title}
+            artist={song.artist}
           />
         </div>
       ) : (

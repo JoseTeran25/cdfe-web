@@ -1,4 +1,4 @@
-import type { Song, User, Service, CreateSongDto, CreateUserDto, CreateServiceDto, SongStatus, Instrument, SupportRequest, CreateSupportRequestDto } from '@/types';
+import type { Song, User, Service, CreateSongDto, CreateUserDto, CreateServiceDto, SongStatus, Instrument, SupportRequest, CreateSupportRequestDto, Conversation, Message, MessageableContact, CreateConversationDto } from '@/types';
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
 
@@ -62,6 +62,17 @@ export const supportRequestsApi = {
   getAll: () => http<SupportRequest[]>('/support-requests'),
   setContacted: (id: string, contacted: boolean) =>
     http<SupportRequest>(`/support-requests/${id}`, { method: 'PATCH', body: JSON.stringify({ contacted }) }),
+  remove: (id: string) => http<{ message: string }>(`/support-requests/${id}`, { method: 'DELETE' }),
+};
+
+export const conversationsApi = {
+  getAll: () => http<Conversation[]>('/conversations'),
+  getContacts: () => http<MessageableContact[]>('/conversations/contacts'),
+  getMessages: (id: string) => http<Message[]>(`/conversations/${id}/messages`),
+  create: (d: CreateConversationDto) =>
+    http<Conversation>('/conversations', { method: 'POST', body: JSON.stringify(d) }),
+  sendMessage: (id: string, content: string) =>
+    http<Message>(`/conversations/${id}/messages`, { method: 'POST', body: JSON.stringify({ content }) }),
 };
 
 export const servicesApi = {

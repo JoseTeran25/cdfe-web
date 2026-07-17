@@ -37,52 +37,89 @@ export function UsersTable({ users, loading, onEdit, onDelete }: Props) {
   );
 
   return (
-    <Card padding="none">
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-surface-border bg-navy/[3%]">
-              {["Miembro", "Email", "Rol", "Instrumento", "Acciones"].map(h => (
-                <th key={h} className="text-left px-5 py-3 text-xs font-semibold text-navy/60 uppercase tracking-wide whitespace-nowrap">{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((u, i) => (
-              <tr key={u.id} className={`border-b border-surface-border last:border-0 hover:bg-surface transition-colors ${i % 2 === 1 ? "bg-gray-50/50" : ""}`}>
-                <td className="px-5 py-3.5">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-navy flex items-center justify-center shrink-0">
-                      <span className="text-gold font-bold text-xs">{u.name.slice(0, 2).toUpperCase()}</span>
-                    </div>
-                    <span className="font-semibold text-gray-800">{u.name}</span>
-                  </div>
-                </td>
-                <td className="px-5 py-3.5 text-gray-500">{u.email}</td>
-                <td className="px-5 py-3.5">
-                  <Badge variant={ROLE_BADGE[u.role] ?? "neutral"} size="sm">{getRoleLabel(u.role)}</Badge>
-                </td>
-                <td className="px-5 py-3.5 text-gray-500">
-                  {u.instrument ? getInstrumentLabel(u.instrument) : <span className="text-gray-300">—</span>}
-                </td>
-                <td className="px-5 py-3.5">
-                  <div className="flex items-center gap-1">
-                    <button onClick={() => onEdit(u)} className="p-1.5 rounded-lg text-gray-400 hover:text-navy hover:bg-navy/5 transition-colors">
-                      <Pencil className="w-4 h-4" />
-                    </button>
-                    <button onClick={() => onDelete(u)} className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </td>
+    <>
+      {/* Desktop / tablet — table */}
+      <Card padding="none" className="hidden md:block">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-surface-border bg-navy/[3%]">
+                {["Miembro", "Email", "Rol", "Instrumento", "Acciones"].map(h => (
+                  <th key={h} className="text-left px-5 py-3 text-xs font-semibold text-navy/60 uppercase tracking-wide whitespace-nowrap">{h}</th>
+                ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {users.map((u, i) => (
+                <tr key={u.id} className={`border-b border-surface-border last:border-0 hover:bg-surface transition-colors ${i % 2 === 1 ? "bg-gray-50/50" : ""}`}>
+                  <td className="px-5 py-3.5">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-navy flex items-center justify-center shrink-0">
+                        <span className="text-gold font-bold text-xs">{u.name.slice(0, 2).toUpperCase()}</span>
+                      </div>
+                      <span className="font-semibold text-gray-800">{u.name}</span>
+                    </div>
+                  </td>
+                  <td className="px-5 py-3.5 text-gray-500">{u.email}</td>
+                  <td className="px-5 py-3.5">
+                    <Badge variant={ROLE_BADGE[u.role] ?? "neutral"} size="sm">{getRoleLabel(u.role)}</Badge>
+                  </td>
+                  <td className="px-5 py-3.5 text-gray-500">
+                    {u.instrument ? getInstrumentLabel(u.instrument) : <span className="text-gray-300">—</span>}
+                  </td>
+                  <td className="px-5 py-3.5">
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => onEdit(u)} className="p-1.5 rounded-lg text-gray-400 hover:text-navy hover:bg-navy/5 transition-colors">
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => onDelete(u)} className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="px-5 py-3 border-t border-surface-border text-xs text-gray-400">
+          {users.length} miembro{users.length !== 1 ? "s" : ""}
+        </div>
+      </Card>
+
+      {/* Mobile — cards */}
+      <div className="md:hidden flex flex-col gap-3">
+        {users.map(u => (
+          <Card key={u.id} padding="md">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-full bg-navy flex items-center justify-center shrink-0">
+                <span className="text-gold font-bold text-xs">{u.name.slice(0, 2).toUpperCase()}</span>
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold text-gray-800 truncate">{u.name}</p>
+                <p className="text-sm text-gray-500 truncate">{u.email}</p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 mb-3">
+              <Badge variant={ROLE_BADGE[u.role] ?? "neutral"} size="sm">{getRoleLabel(u.role)}</Badge>
+              {u.instrument && <Badge variant="navy" size="sm">{getInstrumentLabel(u.instrument)}</Badge>}
+            </div>
+
+            <div className="flex items-center gap-2 pt-3 border-t border-surface-border">
+              <button onClick={() => onEdit(u)} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium text-gray-500 hover:text-navy hover:bg-navy/5 transition-colors">
+                <Pencil className="w-3.5 h-3.5" /> Editar
+              </button>
+              <button onClick={() => onDelete(u)} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium text-gray-500 hover:text-red-500 hover:bg-red-50 transition-colors">
+                <Trash2 className="w-3.5 h-3.5" /> Eliminar
+              </button>
+            </div>
+          </Card>
+        ))}
+        <p className="text-center text-xs text-gray-400">
+          {users.length} miembro{users.length !== 1 ? "s" : ""}
+        </p>
       </div>
-      <div className="px-5 py-3 border-t border-surface-border text-xs text-gray-400">
-        {users.length} miembro{users.length !== 1 ? "s" : ""}
-      </div>
-    </Card>
+    </>
   );
 }
