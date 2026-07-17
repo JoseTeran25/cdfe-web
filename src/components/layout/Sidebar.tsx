@@ -11,6 +11,7 @@ import {
   CalendarDays,
   Users,
   HeartHandshake,
+  MessageCircle,
   ChevronLeft,
   ChevronRight,
   Settings,
@@ -30,6 +31,7 @@ const navItems: NavItem[] = [
   { label: "Servicios", href: "/services", icon: CalendarDays },
   { label: "Equipo", href: "/team", icon: Users },
   { label: "No estás solo", href: "/support-requests", icon: HeartHandshake },
+  { label: "Mensajes", href: "/mensajes", icon: MessageCircle },
 ];
 
 const bottomNavItems: NavItem[] = [

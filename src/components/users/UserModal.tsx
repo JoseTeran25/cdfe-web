@@ -23,7 +23,7 @@ const INSTRUMENT_OPTIONS = [
 ];
 
 type FormState = CreateUserDto & { password: string };
-const BLANK: FormState = { name: "", email: "", password: "", role: "MUSICO", instrument: undefined };
+const BLANK: FormState = { name: "", email: "", password: "", role: "MUSICO", instrument: undefined, phone: "" };
 
 interface Props {
   open: boolean;
@@ -38,7 +38,7 @@ export function UserModal({ open, user, onClose, onSave }: Props) {
 
   useEffect(() => {
     setForm(user
-      ? { name: user.name, email: user.email, password: "", role: user.role, instrument: user.instrument ?? undefined }
+      ? { name: user.name, email: user.email, password: "", role: user.role, instrument: user.instrument ?? undefined, phone: user.phone ?? "" }
       : BLANK
     );
   }, [user, open]);
@@ -49,7 +49,7 @@ export function UserModal({ open, user, onClose, onSave }: Props) {
     if (!form.name || !form.email || (!user && !form.password)) return;
     setSaving(true);
     try {
-      const payload: any = { name: form.name, email: form.email, role: form.role, instrument: form.instrument || undefined };
+      const payload: any = { name: form.name, email: form.email, role: form.role, instrument: form.instrument || undefined, phone: form.phone || undefined };
       if (form.password) payload.password = form.password;
       await onSave(payload, user?.id);
       onClose();
@@ -79,6 +79,8 @@ export function UserModal({ open, user, onClose, onSave }: Props) {
           value={form.password} onChange={e => set("password", e.target.value)} />
         <Select label="Rol" required value={form.role} onChange={e => set("role", e.target.value as Role)} options={ROLE_OPTIONS} />
         <Select label="Instrumento" value={form.instrument ?? ""} onChange={e => set("instrument", e.target.value || undefined)} options={INSTRUMENT_OPTIONS} />
+        <Input label="Teléfono / WhatsApp" placeholder="0987654321" hint="Para mensajería de WhatsApp" value={form.phone ?? ""}
+          onChange={e => set("phone", e.target.value)} className="sm:col-span-2" />
       </div>
     </Modal>
   );

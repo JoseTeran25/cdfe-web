@@ -32,6 +32,7 @@ export interface User {
   role: Role;
   avatarUrl?: string;
   instrument?: Instrument;
+  phone?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -107,6 +108,7 @@ export interface CreateUserDto {
   role?: Role;
   instrument?: Instrument;
   avatarUrl?: string;
+  phone?: string;
 }
 
 // ---- No estás solo (landing de acompañamiento) ----
@@ -131,6 +133,48 @@ export interface CreateSupportRequestDto {
   contactMethod: ContactMethod;
   situation?: string;
   consent: boolean;
+}
+
+// ---- WhatsApp (Nexo) ----
+
+export type ContactSource = "SUPPORT_REQUEST" | "TEAM";
+export type MessageDirection = "INBOUND" | "OUTBOUND";
+export type MessageStatus = "PENDING" | "SENT" | "DELIVERED" | "READ" | "FAILED";
+
+export interface Conversation {
+  id: string;
+  phone: string;
+  contactName: string;
+  contactSource: ContactSource;
+  lastMessageAt?: string;
+  messages?: Message[]; // último mensaje, cuando viene incluido en el listado
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Message {
+  id: string;
+  conversationId: string;
+  direction: MessageDirection;
+  content: string;
+  status: MessageStatus;
+  externalId?: string;
+  createdAt: string;
+}
+
+export interface MessageableContact {
+  contactName: string;
+  phone: string;
+  contactSource: ContactSource;
+  sourceId: string;
+  conversationId: string | null;
+}
+
+export interface CreateConversationDto {
+  phone: string;
+  contactName: string;
+  contactSource: ContactSource;
+  initialMessage?: string;
 }
 
 // ---- Dashboard ----

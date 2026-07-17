@@ -173,6 +173,8 @@ export function SetlistPlayer({ songs }: Props) {
               onSemitonesChange={val =>
                 setSemitones(prev => prev.map((s, j) => (j === activeIdx ? val : s)))
               }
+              title={song.title}
+              artist={song.artist}
             />
           ) : (
             <div className="flex flex-col items-center justify-center py-10 gap-2 text-center">
