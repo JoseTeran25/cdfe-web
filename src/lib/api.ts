@@ -73,6 +73,7 @@ export const conversationsApi = {
     http<Conversation>('/conversations', { method: 'POST', body: JSON.stringify(d) }),
   sendMessage: (id: string, content: string) =>
     http<Message>(`/conversations/${id}/messages`, { method: 'POST', body: JSON.stringify({ content }) }),
+  markRead: (id: string) => http<Conversation>(`/conversations/${id}/read`, { method: 'PATCH' }),
 };
 
 export const servicesApi = {

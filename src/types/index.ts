@@ -144,9 +144,11 @@ export type MessageStatus = "PENDING" | "SENT" | "DELIVERED" | "READ" | "FAILED"
 export interface Conversation {
   id: string;
   phone: string;
+  lid?: string;
   contactName: string;
   contactSource: ContactSource;
   lastMessageAt?: string;
+  unreadCount: number;
   messages?: Message[]; // último mensaje, cuando viene incluido en el listado
   createdAt: string;
   updatedAt: string;
