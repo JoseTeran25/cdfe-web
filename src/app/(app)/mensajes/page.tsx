@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 import type { Conversation, MessageableContact } from "@/types";
 
 export default function MensajesPage() {
-  const { conversations, loading, create } = useConversations();
+  const { conversations, loading, create, markRead } = useConversations();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [newConversationOpen, setNewConversationOpen] = useState(false);
   const [toast, setToast] = useState<ToastData | null>(null);
@@ -20,6 +20,11 @@ export default function MensajesPage() {
 
   const selectedConversation: Conversation | null =
     conversations.find(c => c.id === selectedId) ?? null;
+
+  const handleSelect = (conversation: Conversation) => {
+    setSelectedId(conversation.id);
+    if (conversation.unreadCount > 0) markRead(conversation.id);
+  };
 
   const handleSend = async (content: string) => {
     try {
@@ -54,7 +59,7 @@ export default function MensajesPage() {
             conversations={conversations}
             selectedId={selectedId}
             loading={loading}
-            onSelect={c => setSelectedId(c.id)}
+            onSelect={handleSelect}
             onNewConversation={() => setNewConversationOpen(true)}
           />
         </aside>
@@ -74,7 +79,10 @@ export default function MensajesPage() {
       <NewConversationModal
         open={newConversationOpen}
         onClose={() => setNewConversationOpen(false)}
-        onOpenExisting={id => setSelectedId(id)}
+        onOpenExisting={id => {
+          setSelectedId(id);
+          markRead(id);
+        }}
         onCreate={handleCreate}
       />
 

@@ -27,5 +27,10 @@ export function useConversations() {
     return conversation;
   };
 
-  return { conversations, loading, fetch, create };
+  const markRead = async (id: string) => {
+    const updated = await conversationsApi.markRead(id);
+    setConversations(prev => prev.map(c => (c.id === id ? { ...c, unreadCount: updated.unreadCount } : c)));
+  };
+
+  return { conversations, loading, fetch, create, markRead };
 }

@@ -44,6 +44,7 @@ export function ConversationList({ conversations, selectedId, loading, onSelect,
           conversations.map(c => {
             const lastMessage = c.messages?.[0];
             const active = c.id === selectedId;
+            const unread = c.unreadCount > 0;
             return (
               <button
                 key={c.id}
@@ -53,14 +54,21 @@ export function ConversationList({ conversations, selectedId, loading, onSelect,
                   active ? "bg-navy/5" : "hover:bg-surface"
                 )}
               >
-                <div className="w-10 h-10 shrink-0 rounded-full bg-navy flex items-center justify-center text-gold font-display font-bold text-sm">
+                <div className={cn(
+                  "w-10 h-10 shrink-0 rounded-full bg-navy flex items-center justify-center text-gold font-display font-bold text-sm",
+                  unread && "ring-2 ring-gold ring-offset-2 ring-offset-white"
+                )}>
                   {c.contactName.trim().charAt(0).toUpperCase() || "?"}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm font-semibold text-gray-800 truncate">{c.contactName}</p>
+                    <p className={cn("text-sm truncate", unread ? "font-bold text-navy" : "font-semibold text-gray-800")}>
+                      {c.contactName}
+                    </p>
                     {c.lastMessageAt && (
-                      <span className="text-[11px] text-gray-400 shrink-0">{formatDateShort(c.lastMessageAt)}</span>
+                      <span className={cn("text-[11px] shrink-0", unread ? "text-navy font-semibold" : "text-gray-400")}>
+                        {formatDateShort(c.lastMessageAt)}
+                      </span>
                     )}
                   </div>
                   <div className="flex items-center gap-1.5 mt-0.5">
@@ -68,12 +76,19 @@ export function ConversationList({ conversations, selectedId, loading, onSelect,
                       {c.contactSource === "TEAM" ? "Equipo" : "Solicitud"}
                     </Badge>
                   </div>
-                  {lastMessage && (
-                    <p className="text-xs text-gray-400 truncate mt-1">
-                      {lastMessage.direction === "OUTBOUND" ? "Tú: " : ""}
-                      {lastMessage.content}
-                    </p>
-                  )}
+                  <div className="flex items-center justify-between gap-2 mt-1">
+                    {lastMessage && (
+                      <p className={cn("text-xs truncate", unread ? "text-gray-700 font-medium" : "text-gray-400")}>
+                        {lastMessage.direction === "OUTBOUND" ? "Tú: " : ""}
+                        {lastMessage.content}
+                      </p>
+                    )}
+                    {unread && (
+                      <span className="shrink-0 min-w-[1.25rem] h-5 px-1.5 rounded-full bg-gold text-navy-950 text-[11px] font-bold flex items-center justify-center">
+                        {c.unreadCount}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </button>
             );

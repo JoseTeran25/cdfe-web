@@ -16,7 +16,7 @@ import {
   ChevronRight,
   Settings,
 } from "lucide-react";
-import { supportRequestsApi } from "@/lib/api";
+import { supportRequestsApi, conversationsApi } from "@/lib/api";
 
 interface NavItem {
   label: string;
@@ -53,12 +53,25 @@ export function Sidebar({
 }: SidebarProps) {
   const pathname = usePathname();
   const [pendingSupportCount, setPendingSupportCount] = useState(0);
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
 
   useEffect(() => {
     supportRequestsApi
       .getAll()
       .then(reqs => setPendingSupportCount(reqs.filter(r => !r.contacted).length))
       .catch(() => {});
+  }, [pathname]);
+
+  useEffect(() => {
+    const fetchUnread = () => {
+      conversationsApi
+        .getAll()
+        .then(convos => setUnreadMessagesCount(convos.reduce((sum, c) => sum + c.unreadCount, 0)))
+        .catch(() => {});
+    };
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 15000);
+    return () => clearInterval(interval);
   }, [pathname]);
 
   const isActive = (href: string) =>
@@ -140,7 +153,9 @@ export function Sidebar({
             const badge =
               item.href === "/support-requests" && pendingSupportCount > 0
                 ? String(pendingSupportCount)
-                : item.badge;
+                : item.href === "/mensajes" && unreadMessagesCount > 0
+                  ? String(unreadMessagesCount)
+                  : item.badge;
             return (
               <Link
                 key={item.href}
