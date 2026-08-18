@@ -37,11 +37,21 @@ const SECTION_LABELS: Record<string, string> = {
   outro: "Final", start_of_outro: "Final",
 };
 
+const COMMENT_DIRECTIVES = new Set(["comment", "c", "comment_italic", "ci", "comment_box", "cb"]);
+
 function parseDirective(line: string): { kind: "section"; label: string } | { kind: "skip" } {
   const inner = line.slice(1, -1).trim();
-  const name = inner.split(":")[0].trim().toLowerCase();
-  if (SECTION_LABELS[name]) return { kind: "section", label: SECTION_LABELS[name] };
-  return { kind: "skip" }; // end_of_*, title/artist/key/tempo/comment, etc. — ya se muestran en el encabezado
+  const colonIdx = inner.indexOf(":");
+  const name = (colonIdx === -1 ? inner : inner.slice(0, colonIdx)).trim().toLowerCase();
+  const value = colonIdx === -1 ? "" : inner.slice(colonIdx + 1).trim();
+
+  // {comment: Verso 1} — el texto libre se usa tal cual como etiqueta de sección
+  if (COMMENT_DIRECTIVES.has(name)) {
+    return value ? { kind: "section", label: value } : { kind: "skip" };
+  }
+  // {start_of_verse: Verso 1} — si trae texto propio, se prefiere sobre la etiqueta genérica
+  if (SECTION_LABELS[name]) return { kind: "section", label: value || SECTION_LABELS[name] };
+  return { kind: "skip" }; // end_of_*, title/artist/key/tempo, etc. — ya se muestran en el encabezado
 }
 
 // ── Formato inline [Am]lyric (legado) ────────────────────────────

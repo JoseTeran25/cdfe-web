@@ -4,16 +4,18 @@ import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft, Music2, Pencil, Activity,
-  Clock, Hash, Tag, Volume2, Plus,
+  Clock, Hash, Tag, Volume2, Plus, ExternalLink, StickyNote, Link2,
 } from "lucide-react";
 import { useSong } from "@/hooks/useSong";
 import { useSongs } from "@/hooks/useSongs";
 import { ChordViewer } from "@/components/songs/ChordViewer";
 import { MultitrackPlayer } from "@/components/songs/MultitrackPlayer";
+import { YoutubeEmbed } from "@/components/songs/YoutubeEmbed";
 import { SongModal } from "@/components/songs/SongModal";
 import { Toast, type ToastData } from "@/components/ui/Toast";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
+import { getYoutubeVideoId } from "@/lib/utils";
 import type { CreateSongDto } from "@/types";
 
 export default function SongDetailPage() {
@@ -59,6 +61,8 @@ export default function SongDetailPage() {
       </Button>
     </div>
   );
+
+  const youtubeId = song.referenceUrl ? getYoutubeVideoId(song.referenceUrl) : null;
 
   return (
     <div className="space-y-6 animate-fade-in-up">
@@ -130,6 +134,51 @@ export default function SongDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Notas */}
+      {song.notes && (
+        <div className="bg-gold/[6%] rounded-2xl border border-gold/20 p-5 sm:p-6">
+          <h2 className="font-display font-semibold text-navy text-base mb-2 flex items-center gap-2">
+            <StickyNote className="w-4 h-4 text-gold" />
+            Notas
+          </h2>
+          <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{song.notes}</p>
+        </div>
+      )}
+
+      {/* Referencia: YouTube embebido o link externo (Drive, etc.) */}
+      {song.referenceUrl && (
+        <div className="bg-white rounded-2xl border border-surface-border shadow-card p-5 sm:p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-display font-semibold text-navy text-base flex items-center gap-2">
+              <Link2 className="w-4 h-4 text-gold" />
+              Referencia
+            </h2>
+            <a
+              href={song.referenceUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-1.5 text-xs font-medium text-gray-400 hover:text-navy transition-colors"
+            >
+              Abrir enlace <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          </div>
+
+          {youtubeId ? (
+            <YoutubeEmbed videoId={youtubeId} title={`${song.title} — video de referencia`} />
+          ) : (
+            <a
+              href={song.referenceUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-3 px-4 py-3.5 rounded-xl bg-navy/5 hover:bg-navy/10 transition-colors text-navy text-sm font-medium"
+            >
+              <ExternalLink className="w-4 h-4 shrink-0" />
+              <span className="truncate">{song.referenceUrl}</span>
+            </a>
+          )}
+        </div>
+      )}
 
       {/* Multitrack player */}
       {song.sequenceUrl && song.sequenceUrl.length > 0 ? (

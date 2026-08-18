@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
-  Music2, ChevronLeft, ChevronRight, Volume2, BookOpen, Hash, Activity,
+  Music2, ChevronLeft, ChevronRight, Volume2, BookOpen, Hash, Activity, Video,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, getYoutubeVideoId } from "@/lib/utils";
 import { ChordViewer } from "@/components/songs/ChordViewer";
 import { MultitrackPlayer } from "@/components/songs/MultitrackPlayer";
+import { YoutubeEmbed } from "@/components/songs/YoutubeEmbed";
 import { Badge } from "@/components/ui/Badge";
 import type { Song } from "@/types";
 
@@ -18,6 +19,16 @@ export function SetlistPlayer({ songs }: Props) {
   const [activeIdx, setActiveIdx] = useState(0);
   // Per-song transposition state — preserved when switching tabs
   const [semitones, setSemitones] = useState<number[]>(() => songs.map(() => 0));
+  const [mediaTab, setMediaTab] = useState<"tracks" | "video">("tracks");
+
+  const currentSong = songs[activeIdx];
+  const currentHasTracks = !!(currentSong?.sequenceUrl && currentSong.sequenceUrl.length > 0);
+
+  // Al cambiar de canción, mostrar pistas si tiene, si no el video (si tiene)
+  useEffect(() => {
+    setMediaTab(currentHasTracks ? "tracks" : "video");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeIdx]);
 
   const prev = () => setActiveIdx(i => Math.max(0, i - 1));
   const next = () => setActiveIdx(i => Math.min(songs.length - 1, i + 1));
@@ -42,9 +53,11 @@ export function SetlistPlayer({ songs }: Props) {
     );
   }
 
-  const song = songs[activeIdx];
-  const hasTracks = !!(song.sequenceUrl && song.sequenceUrl.length > 0);
+  const song = currentSong;
+  const hasTracks = currentHasTracks;
   const hasLyrics = !!song.lyrics;
+  const youtubeId = song.referenceUrl ? getYoutubeVideoId(song.referenceUrl) : null;
+  const hasVideo = !!youtubeId;
 
   return (
     <div className="bg-white rounded-2xl border border-surface-border shadow-card overflow-hidden">
@@ -156,10 +169,36 @@ export function SetlistPlayer({ songs }: Props) {
           </div>
         </div>
 
-        {/* ── Multitrack player ────────────────────────────────── */}
-        {hasTracks && (
+        {/* ── Pistas o video: uno u otro, no ambos, para no ocupar mucho espacio ── */}
+        {(hasTracks || hasVideo) && (
           <div className="px-5 sm:px-6 py-5">
-            <MultitrackPlayer tracks={song.sequenceUrl!} />
+            {hasTracks && hasVideo && (
+              <div className="flex items-center gap-1 mb-4 bg-surface border border-surface-border rounded-xl p-1 w-fit">
+                <button
+                  onClick={() => setMediaTab("tracks")}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors",
+                    mediaTab === "tracks" ? "bg-white text-navy shadow-card" : "text-gray-400 hover:text-navy"
+                  )}
+                >
+                  <Volume2 className="w-3.5 h-3.5" /> Pistas
+                </button>
+                <button
+                  onClick={() => setMediaTab("video")}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors",
+                    mediaTab === "video" ? "bg-white text-navy shadow-card" : "text-gray-400 hover:text-navy"
+                  )}
+                >
+                  <Video className="w-3.5 h-3.5" /> Video
+                </button>
+              </div>
+            )}
+
+            {mediaTab === "tracks" && hasTracks && <MultitrackPlayer tracks={song.sequenceUrl!} />}
+            {mediaTab === "video" && hasVideo && (
+              <YoutubeEmbed videoId={youtubeId!} title={`${song.title} — video de referencia`} />
+            )}
           </div>
         )}
 

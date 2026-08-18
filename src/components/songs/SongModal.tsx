@@ -35,6 +35,7 @@ const TRACK_TYPE_OPTIONS = [
 const BLANK: CreateSongDto = {
   title: "", artist: "", key: "G", status: "PENDIENTE",
   category: undefined, bpm: undefined, lyrics: "", sequenceUrl: [],
+  referenceUrl: "", notes: "",
 };
 
 
@@ -63,6 +64,8 @@ export function SongModal({ open, song, onClose, onSave }: Props) {
           category: song.category,
           lyrics: song.lyrics ?? "",
           sequenceUrl: song.sequenceUrl ? [...song.sequenceUrl] : [],
+          referenceUrl: song.referenceUrl ?? "",
+          notes: song.notes ?? "",
         }
       : BLANK
     );
@@ -114,6 +117,10 @@ export function SongModal({ open, song, onClose, onSave }: Props) {
       const payload: CreateSongDto = {
         ...form,
         category: form.category || undefined,
+        // null explícito (no undefined) para que, al limpiar el campo, la API sí borre el valor
+        // guardado — undefined desaparece del JSON y Prisma dejaría el valor anterior intacto.
+        referenceUrl: form.referenceUrl?.trim() || null,
+        notes: form.notes?.trim() || null,
       };
       await onSave(payload, song?.id);
       onClose();
@@ -157,7 +164,13 @@ export function SongModal({ open, song, onClose, onSave }: Props) {
             label="Categoría" value={form.category ?? ""}
             onChange={e => set("category", (e.target.value as SongCategory) || undefined)}
             options={CATEGORY_OPTIONS}/>
-        </div> 
+          <Input
+            label="Link de referencia" type="url" placeholder="https://youtube.com/watch?v=..."
+            value={form.referenceUrl ?? ""}
+            onChange={e => set("referenceUrl", e.target.value)}
+            hint="YouTube, Drive, etc." className="sm:col-span-2"
+          />
+        </div>
 
         {/* ── Letra / ChordPro ──────────────────────────────── */}
         <Textarea
@@ -167,6 +180,15 @@ export function SongModal({ open, song, onClose, onSave }: Props) {
           onChange={e => set("lyrics", e.target.value)}
           rows={6}
           hint="Formato ChordPro: [Am]Letra del [G]coro"
+        />
+
+        {/* ── Notas ──────────────────────────────────────────── */}
+        <Textarea
+          label="Notas"
+          placeholder="Notas adicionales sobre la canción, arreglo, indicaciones..."
+          value={form.notes ?? ""}
+          onChange={e => set("notes", e.target.value)}
+          rows={3}
         />
 
         {/* ── Pistas Multitrack ─────────────────────────────── */}
