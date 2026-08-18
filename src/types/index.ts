@@ -54,6 +54,8 @@ export interface Song {
   category?: SongCategory;
   sequenceUrl?: TrackItem[]; // JSON con tracks
   tags?: string[];
+  referenceUrl?: string; // Link de referencia: YouTube, Drive, etc.
+  notes?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -90,6 +92,8 @@ export interface CreateSongDto {
   category?: SongCategory;
   sequenceUrl?: TrackItem[];
   tags?: string[];
+  referenceUrl?: string | null;
+  notes?: string | null;
 }
 
 export interface CreateServiceDto {

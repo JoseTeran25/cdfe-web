@@ -72,6 +72,26 @@ export function getContactMethodLabel(method: string): string {
   return labels[method] ?? method;
 }
 
+/** Extrae el video ID de un link de YouTube (watch, youtu.be, embed, shorts). null si no es de YouTube. */
+export function getYoutubeVideoId(url: string): string | null {
+  try {
+    const u = new URL(url);
+    const host = u.hostname.replace(/^www\.|^m\./, "");
+
+    if (host === "youtu.be") {
+      return u.pathname.slice(1).split("/")[0] || null;
+    }
+    if (host === "youtube.com" || host === "music.youtube.com") {
+      if (u.pathname === "/watch") return u.searchParams.get("v");
+      if (u.pathname.startsWith("/embed/")) return u.pathname.split("/")[2] || null;
+      if (u.pathname.startsWith("/shorts/")) return u.pathname.split("/")[2] || null;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export function getDaysUntil(dateString: string): number {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
