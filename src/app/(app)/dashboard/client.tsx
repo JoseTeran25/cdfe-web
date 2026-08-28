@@ -3,6 +3,7 @@
 import { useDashboard } from "@/hooks/useDashboard";
 import { NextServiceCard } from "@/components/dashboard/NextServiceCard";
 import { SongsToLearnList } from "@/components/dashboard/SongsToLearnList";
+import { TopSongsChart } from "@/components/dashboard/TopSongsChart";
 import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import {
   Music2,
@@ -183,6 +184,9 @@ export function DashboardClient() {
           <SongsToLearnList songs={data.songsToLearn} />
         </div>
       </div>
+
+      {/* Top Songs Chart — full width */}
+      <TopSongsChart />
     </div>
   );
 }

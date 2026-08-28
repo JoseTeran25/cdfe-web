@@ -1,4 +1,4 @@
-import type { Song, User, Service, CreateSongDto, CreateUserDto, CreateServiceDto, SongStatus, Instrument, SupportRequest, CreateSupportRequestDto, Conversation, Message, MessageableContact, CreateConversationDto } from '@/types';
+import type { Song, User, Service, CreateSongDto, CreateUserDto, CreateServiceDto, SongStatus, ServiceType, Instrument, SupportRequest, CreateSupportRequestDto, Conversation, Message, MessageableContact, CreateConversationDto } from '@/types';
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
 
@@ -22,6 +22,11 @@ async function http<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+export interface TopPlayedSong {
+  song: Song;
+  count: number;
+}
+
 export const songsApi = {
   getAll: (p?: { status?: SongStatus; search?: string }) => {
     const qs = new URLSearchParams();
@@ -34,6 +39,14 @@ export const songsApi = {
   create: (d: CreateSongDto) => http<Song>('/songs', { method: 'POST', body: JSON.stringify(d) }),
   update: (id: string, d: Partial<CreateSongDto>) => http<Song>(`/songs/${id}`, { method: 'PATCH', body: JSON.stringify(d) }),
   remove: (id: string) => http<{ message: string }>(`/songs/${id}`, { method: 'DELETE' }),
+  getTopPlayed: (p?: { year?: number; serviceType?: ServiceType; limit?: number }) => {
+    const qs = new URLSearchParams();
+    if (p?.year) qs.set('year', String(p.year));
+    if (p?.serviceType) qs.set('serviceType', p.serviceType);
+    if (p?.limit) qs.set('limit', String(p.limit));
+    const q = qs.toString();
+    return http<TopPlayedSong[]>(`/songs/top-played${q ? `?${q}` : ''}`);
+  },
 };
 
 export const usersApi = {
