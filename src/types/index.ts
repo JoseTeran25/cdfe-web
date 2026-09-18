@@ -8,7 +8,7 @@ export type SongStatus = "ACTIVA" | "PENDIENTE";
 
 export type SongCategory = "ALABANZA" | "ADORACION";
 
-export type ServiceType = "DOMINGO" | "MIERCOLES";
+export type ServiceType = "DOMINGO" | "MIERCOLES" | "JOVENES";
 
 export type Instrument =
   | "GUITARRA"

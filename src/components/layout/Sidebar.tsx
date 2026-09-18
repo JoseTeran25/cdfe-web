@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import {
@@ -15,8 +15,11 @@ import {
   ChevronLeft,
   ChevronRight,
   Settings,
+  LogIn,
+  LogOut,
 } from "lucide-react";
 import { supportRequestsApi, conversationsApi } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface NavItem {
   label: string;
@@ -52,17 +55,28 @@ export function Sidebar({
   onMobileClose,
 }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, logout } = useAuth();
+  const isAdmin = user?.role === "ADMIN";
   const [pendingSupportCount, setPendingSupportCount] = useState(0);
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
 
   useEffect(() => {
+    if (!isAdmin) {
+      setPendingSupportCount(0);
+      return;
+    }
     supportRequestsApi
       .getAll()
       .then(reqs => setPendingSupportCount(reqs.filter(r => !r.contacted).length))
       .catch(() => {});
-  }, [pathname]);
+  }, [pathname, isAdmin]);
 
   useEffect(() => {
+    if (!isAdmin) {
+      setUnreadMessagesCount(0);
+      return;
+    }
     const fetchUnread = () => {
       conversationsApi
         .getAll()
@@ -72,7 +86,12 @@ export function Sidebar({
     fetchUnread();
     const interval = setInterval(fetchUnread, 15000);
     return () => clearInterval(interval);
-  }, [pathname]);
+  }, [pathname, isAdmin]);
+
+  const handleLogout = () => {
+    logout();
+    router.push("/");
+  };
 
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(href + "/");
@@ -234,25 +253,45 @@ export function Sidebar({
             );
           })}
 
-          {/* User Avatar */}
-          <div
-            className={cn(
-              "flex items-center gap-3 rounded-xl px-3 py-2.5 mt-1 bg-white/[8%]",
-              collapsed && !mobileOpen && "justify-center px-2"
-            )}
-          >
-            <div className="w-7 h-7 rounded-full bg-gold/30 border border-gold/40 flex items-center justify-center flex-shrink-0">
-              <span className="text-gold font-bold text-xs">JD</span>
-            </div>
-            {(!collapsed || mobileOpen) && (
-              <div className="min-w-0">
-                <p className="text-white text-xs font-medium truncate">
-                  Cdfe Worship Sur
-                </p>
-                <p className="text-white/40 text-[10px] truncate">Director</p>
+          {/* Auth status */}
+          {isAdmin ? (
+            <button
+              onClick={handleLogout}
+              className={cn(
+                "w-full flex items-center gap-3 rounded-xl px-3 py-2.5 mt-1 bg-white/[8%] hover:bg-white/[12%] transition-colors group",
+                collapsed && !mobileOpen && "justify-center px-2"
+              )}
+              title="Cerrar sesión"
+            >
+              <div className="w-7 h-7 rounded-full bg-gold/30 border border-gold/40 flex items-center justify-center flex-shrink-0">
+                <span className="text-gold font-bold text-xs">
+                  {user!.name.slice(0, 2).toUpperCase()}
+                </span>
               </div>
-            )}
-          </div>
+              {(!collapsed || mobileOpen) && (
+                <>
+                  <div className="min-w-0 text-left">
+                    <p className="text-white text-xs font-medium truncate">{user!.name}</p>
+                    <p className="text-white/40 text-[10px] truncate">Administrador</p>
+                  </div>
+                  <LogOut className="ml-auto w-3.5 h-3.5 text-white/40 group-hover:text-white/70 flex-shrink-0" />
+                </>
+              )}
+            </button>
+          ) : (
+            <Link
+              href="/login"
+              onClick={onMobileClose}
+              className={cn(
+                "flex items-center gap-3 rounded-xl px-3 py-2.5 mt-1 text-white/40 hover:bg-white/[8%] hover:text-white/70 transition-colors",
+                collapsed && !mobileOpen && "justify-center px-2"
+              )}
+              title="Iniciar sesión"
+            >
+              <LogIn className="w-4 h-4 flex-shrink-0" strokeWidth={2} />
+              {(!collapsed || mobileOpen) && <span className="text-xs">Iniciar sesión</span>}
+            </Link>
+          )}
         </div>
 
         {/* Desktop collapse toggle */}

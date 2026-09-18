@@ -13,31 +13,52 @@ import {
 } from "recharts";
 import { useTopSongs } from "@/hooks/useTopSongs";
 import type { ServiceType } from "@/types";
-import { Music2, TrendingUp, Filter, AlertCircle } from "lucide-react";
+import {
+  Music2,
+  TrendingUp,
+  Filter,
+  AlertCircle,
+  ChevronDown,
+  BarChart3,
+  BarChartHorizontal,
+} from "lucide-react";
+
+type Orientation = "vertical" | "horizontal";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 const CURRENT_YEAR = new Date().getFullYear();
 const YEARS = Array.from({ length: 4 }, (_, i) => CURRENT_YEAR - i);
 
-const BAR_COLORS = [
-  "#4F46E5", // indigo-600
-  "#7C3AED", // violet-600
-  "#2563EB", // blue-600
-  "#0891B2", // cyan-600
-  "#059669", // emerald-600
-  "#D97706", // amber-600
-  "#DC2626", // red-600
-  "#9333EA", // purple-600
-  "#0D9488", // teal-600
-  "#EA580C", // orange-600
+const MONTHS = [
+  { value: 1, label: "Enero" },
+  { value: 2, label: "Febrero" },
+  { value: 3, label: "Marzo" },
+  { value: 4, label: "Abril" },
+  { value: 5, label: "Mayo" },
+  { value: 6, label: "Junio" },
+  { value: 7, label: "Julio" },
+  { value: 8, label: "Agosto" },
+  { value: 9, label: "Septiembre" },
+  { value: 10, label: "Octubre" },
+  { value: 11, label: "Noviembre" },
+  { value: 12, label: "Diciembre" },
 ];
+
+const SERVICE_TYPE_OPTIONS: { value: ServiceType; label: string }[] = [
+  { value: "DOMINGO", label: "Domingo" },
+  { value: "MIERCOLES", label: "Miércoles" },
+  { value: "JOVENES", label: "Jóvenes" },
+];
+
+const BAR_FILL = "#4F46E5"; // indigo-600 — hue sequential, magnitude ya la codifica la altura
+const BAR_FILL_TOP = "#3730A3"; // indigo-800 — acento para el puesto #1
 
 // ── Custom Tooltip ────────────────────────────────────────────────────────────
 
 interface TooltipPayload {
   value: number;
-  payload: { artist: string; title: string };
+  payload: { artist: string; fullTitle: string };
 }
 
 function CustomTooltip({
@@ -51,7 +72,7 @@ function CustomTooltip({
   const { value, payload: data } = payload[0];
   return (
     <div className="bg-white border border-gray-200 rounded-xl shadow-lg px-4 py-3 text-sm">
-      <p className="font-semibold text-gray-800">{data.title}</p>
+      <p className="font-semibold text-gray-800">{data.fullTitle}</p>
       <p className="text-gray-500 text-xs mt-0.5">{data.artist}</p>
       <p className="mt-2 font-bold text-indigo-600">
         {value} {value === 1 ? "vez" : "veces"}
@@ -64,15 +85,13 @@ function CustomTooltip({
 
 function ChartSkeleton() {
   return (
-    <div className="animate-pulse space-y-3 py-4">
-      {Array.from({ length: 6 }).map((_, i) => (
-        <div key={i} className="flex items-center gap-3">
-          <div
-            className="h-3 bg-gray-200 rounded"
-            style={{ width: `${60 + Math.random() * 30}%` }}
-          />
-          <div className="h-3 bg-gray-100 rounded w-8" />
-        </div>
+    <div className="flex items-end gap-3 h-64 px-2 pb-6 animate-pulse">
+      {Array.from({ length: 8 }).map((_, i) => (
+        <div
+          key={i}
+          className="flex-1 bg-gray-100 rounded-t-lg"
+          style={{ height: `${30 + Math.random() * 60}%` }}
+        />
       ))}
     </div>
   );
@@ -107,15 +126,26 @@ function FilterBtn({
 
 export function TopSongsChart() {
   const [year, setYear] = useState<number | undefined>(CURRENT_YEAR);
+  const [month, setMonth] = useState<number | undefined>(undefined);
   const [serviceType, setServiceType] = useState<ServiceType | undefined>(
     undefined
   );
+  const [orientation, setOrientation] = useState<Orientation>("vertical");
 
-  const { data, loading, error } = useTopSongs({ year, serviceType });
+  const { data, loading, error } = useTopSongs({ year, month, serviceType });
 
-  // Transform data for Recharts
+  const handleYearChange = (y: number | undefined) => {
+    setYear(y);
+    if (y === undefined) setMonth(undefined);
+  };
+
+  // Transform data for Recharts — más espacio disponible por etiqueta en horizontal
+  const maxTitleLength = orientation === "horizontal" ? 22 : 14;
   const chartData = data.map((item) => ({
-    title: item.song.title.length > 22 ? item.song.title.slice(0, 22) + "…" : item.song.title,
+    title:
+      item.song.title.length > maxTitleLength
+        ? item.song.title.slice(0, maxTitleLength) + "…"
+        : item.song.title,
     fullTitle: item.song.title,
     artist: item.song.artist,
     count: item.count,
@@ -139,18 +169,66 @@ export function TopSongsChart() {
 
         {/* Filters */}
         <div className="flex items-center gap-2 flex-wrap">
+          {/* Orientation toggle */}
+          <div className="flex items-center gap-0.5 bg-gray-100 rounded-lg p-0.5">
+            <button
+              onClick={() => setOrientation("vertical")}
+              title="Barras verticales"
+              className={`p-1.5 rounded-md transition-all duration-150 ${
+                orientation === "vertical"
+                  ? "bg-white text-indigo-600 shadow-sm"
+                  : "text-gray-400 hover:text-gray-600"
+              }`}
+            >
+              <BarChart3 className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => setOrientation("horizontal")}
+              title="Barras horizontales"
+              className={`p-1.5 rounded-md transition-all duration-150 ${
+                orientation === "horizontal"
+                  ? "bg-white text-indigo-600 shadow-sm"
+                  : "text-gray-400 hover:text-gray-600"
+              }`}
+            >
+              <BarChartHorizontal className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <div className="w-px h-4 bg-gray-200" />
+
           <Filter className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
 
           {/* Year filter */}
           <div className="flex items-center gap-1">
-            <FilterBtn active={year === undefined} onClick={() => setYear(undefined)}>
+            <FilterBtn active={year === undefined} onClick={() => handleYearChange(undefined)}>
               Todos
             </FilterBtn>
             {YEARS.map((y) => (
-              <FilterBtn key={y} active={year === y} onClick={() => setYear(y)}>
+              <FilterBtn key={y} active={year === y} onClick={() => handleYearChange(y)}>
                 {y}
               </FilterBtn>
             ))}
+          </div>
+
+          <div className="w-px h-4 bg-gray-200" />
+
+          {/* Month filter */}
+          <div className="relative">
+            <select
+              value={month ?? ""}
+              disabled={year === undefined}
+              onChange={(e) => setMonth(e.target.value ? Number(e.target.value) : undefined)}
+              className="appearance-none pl-3 pr-7 py-1.5 rounded-lg text-xs font-medium bg-gray-100 text-gray-600 disabled:opacity-40 disabled:cursor-not-allowed outline-none cursor-pointer hover:bg-gray-200 transition-colors duration-150"
+            >
+              <option value="">Todos los meses</option>
+              {MONTHS.map((m) => (
+                <option key={m.value} value={m.value}>
+                  {m.label}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
           </div>
 
           <div className="w-px h-4 bg-gray-200" />
@@ -163,18 +241,15 @@ export function TopSongsChart() {
             >
               Todos
             </FilterBtn>
-            <FilterBtn
-              active={serviceType === "DOMINGO"}
-              onClick={() => setServiceType("DOMINGO")}
-            >
-              Domingo
-            </FilterBtn>
-            <FilterBtn
-              active={serviceType === "MIERCOLES"}
-              onClick={() => setServiceType("MIERCOLES")}
-            >
-              Miércoles
-            </FilterBtn>
+            {SERVICE_TYPE_OPTIONS.map((opt) => (
+              <FilterBtn
+                key={opt.value}
+                active={serviceType === opt.value}
+                onClick={() => setServiceType(opt.value)}
+              >
+                {opt.label}
+              </FilterBtn>
+            ))}
           </div>
         </div>
       </div>
@@ -195,11 +270,13 @@ export function TopSongsChart() {
           <div>
             <p className="text-sm font-medium text-gray-500">Sin datos para este filtro</p>
             <p className="text-xs text-gray-400 mt-1">
-              No hay canciones en servicios{year ? ` del ${year}` : ""}{serviceType ? ` (${serviceType === "DOMINGO" ? "Domingo" : "Miércoles"})` : ""}.
+              No hay canciones en servicios
+              {year ? ` del ${month ? `${MONTHS.find((m) => m.value === month)?.label} de ` : ""}${year}` : ""}
+              {serviceType ? ` (${SERVICE_TYPE_OPTIONS.find((o) => o.value === serviceType)?.label})` : ""}.
             </p>
           </div>
         </div>
-      ) : (
+      ) : orientation === "horizontal" ? (
         <ResponsiveContainer width="100%" height={Math.max(220, chartData.length * 42)}>
           <BarChart
             data={chartData}
@@ -226,10 +303,41 @@ export function TopSongsChart() {
             <Tooltip content={<CustomTooltip />} cursor={{ fill: "#F9FAFB" }} />
             <Bar dataKey="count" radius={[0, 6, 6, 0]} maxBarSize={28} isAnimationActive={true} animationDuration={600}>
               {chartData.map((_, index) => (
-                <Cell
-                  key={`cell-${index}`}
-                  fill={BAR_COLORS[index % BAR_COLORS.length]}
-                />
+                <Cell key={`cell-${index}`} fill={index === 0 ? BAR_FILL_TOP : BAR_FILL} />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      ) : (
+        <ResponsiveContainer width="100%" height={320}>
+          <BarChart
+            data={chartData}
+            margin={{ top: 8, right: 8, left: -20, bottom: 8 }}
+            barCategoryGap="30%"
+          >
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F3F4F6" />
+            <XAxis
+              dataKey="title"
+              tickLine={false}
+              axisLine={false}
+              interval={0}
+              angle={-35}
+              textAnchor="end"
+              height={60}
+              tick={{ fontSize: 11, fill: "#6B7280" }}
+            />
+            <YAxis
+              type="number"
+              tickLine={false}
+              axisLine={false}
+              tick={{ fontSize: 11, fill: "#9CA3AF" }}
+              allowDecimals={false}
+              width={30}
+            />
+            <Tooltip content={<CustomTooltip />} cursor={{ fill: "#F9FAFB" }} />
+            <Bar dataKey="count" radius={[6, 6, 0, 0]} maxBarSize={40} isAnimationActive={true} animationDuration={600}>
+              {chartData.map((_, index) => (
+                <Cell key={`cell-${index}`} fill={index === 0 ? BAR_FILL_TOP : BAR_FILL} />
               ))}
             </Bar>
           </BarChart>

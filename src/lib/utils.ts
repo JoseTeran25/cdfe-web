@@ -60,7 +60,20 @@ export function getInstrumentLabel(instrument: string): string {
 }
 
 export function getServiceTypeLabel(type: string): string {
-  return type === "DOMINGO" ? "Domingo" : "Miércoles";
+  const labels: Record<string, string> = {
+    DOMINGO: "Domingo",
+    MIERCOLES: "Miércoles",
+    JOVENES: "Jóvenes",
+  };
+  return labels[type] ?? type;
+}
+
+export function getServiceTypeBadgeVariant(
+  type: string
+): "navy" | "gold" | "pending" {
+  if (type === "DOMINGO") return "navy";
+  if (type === "MIERCOLES") return "gold";
+  return "pending";
 }
 
 export function getContactMethodLabel(method: string): string {

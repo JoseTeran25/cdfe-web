@@ -4,7 +4,7 @@ import Link from "next/link";
 import type { ApiService } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { formatDate, getServiceTypeLabel } from "@/lib/utils";
+import { formatDate, getServiceTypeLabel, getServiceTypeBadgeVariant } from "@/lib/utils";
 
 interface Props {
   services: ApiService[];
@@ -68,7 +68,7 @@ export function ServicesTable({ services, loading, onEdit, onDelete }: Props) {
                       {formatDate(s.date, { weekday: undefined, month: "short", day: "numeric", year: "numeric" })}
                     </td>
                     <td className="px-5 py-3.5">
-                      <Badge variant={s.type === "DOMINGO" ? "navy" : "gold"} size="sm">
+                      <Badge variant={getServiceTypeBadgeVariant(s.type)} size="sm">
                         {getServiceTypeLabel(s.type)}
                       </Badge>
                     </td>
@@ -134,7 +134,7 @@ export function ServicesTable({ services, loading, onEdit, onDelete }: Props) {
               </div>
 
               <div className="flex flex-wrap items-center gap-2 mb-3">
-                <Badge variant={s.type === "DOMINGO" ? "navy" : "gold"} size="sm">
+                <Badge variant={getServiceTypeBadgeVariant(s.type)} size="sm">
                   {getServiceTypeLabel(s.type)}
                 </Badge>
                 <span className="flex items-center gap-1 text-xs text-gray-400">

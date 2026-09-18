@@ -2,10 +2,11 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ArrowLeft, CalendarDays, FileText, Pencil, Music2, Users } from "lucide-react";
+import { ArrowLeft, CalendarDays, FileText, Pencil, Music2, Users, Send } from "lucide-react";
 import { useServiceDetail } from "@/hooks/useServiceDetail";
 import { useSongs } from "@/hooks/useSongs";
 import { useUsers } from "@/hooks/useUsers";
+import { useAuth } from "@/contexts/AuthContext";
 import { SetlistManager } from "@/components/services/SetlistManager";
 import { TeamManager } from "@/components/services/TeamManager";
 import { SetlistPlayer } from "@/components/services/SetlistPlayer";
@@ -13,8 +14,9 @@ import { ServiceModal } from "@/components/services/ServiceModal";
 import { Toast, type ToastData } from "@/components/ui/Toast";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { servicesApi } from "@/lib/api";
-import { formatDate, getServiceTypeLabel } from "@/lib/utils";
+import { formatDate, getServiceTypeLabel, getServiceTypeBadgeVariant } from "@/lib/utils";
 import type { Instrument, CreateServiceDto } from "@/types";
 
 export default function ServiceDetailPage() {
@@ -25,8 +27,12 @@ export default function ServiceDetailPage() {
     useServiceDetail(id);
   const { songs, fetch: fetchSongs } = useSongs();
   const { users, fetch: fetchUsers } = useUsers();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "ADMIN";
 
   const [editOpen, setEditOpen] = useState(false);
+  const [notifyOpen, setNotifyOpen] = useState(false);
+  const [notifying, setNotifying] = useState(false);
   const [toast, setToast] = useState<ToastData | null>(null);
 
   useEffect(() => {
@@ -42,6 +48,28 @@ export default function ServiceDetailPage() {
     } catch (e: any) {
       setToast({ type: "error", message: e.message });
       throw e;
+    }
+  };
+
+  const handleNotifyTeam = async () => {
+    setNotifying(true);
+    try {
+      const serviceUrl = `${window.location.origin}/services/${id}`;
+      const result = await servicesApi.notifyTeam(id, serviceUrl);
+      setNotifyOpen(false);
+      if (result.total === 0) {
+        setToast({ type: "error", message: "El servicio no tiene integrantes asignados" });
+      } else {
+        const extra = result.skipped > 0 ? ` (${result.skipped} sin teléfono registrado)` : "";
+        setToast({
+          type: result.sent > 0 ? "success" : "error",
+          message: `Mensaje enviado a ${result.sent} de ${result.total} integrantes${extra}`,
+        });
+      }
+    } catch (e: any) {
+      setToast({ type: "error", message: e.message });
+    } finally {
+      setNotifying(false);
     }
   };
 
@@ -97,7 +125,7 @@ export default function ServiceDetailPage() {
               {/* Type badge + title */}
               <div className="flex flex-wrap items-center gap-2 mb-2">
                 <Badge
-                  variant={service.type === "DOMINGO" ? "navy" : "gold"}
+                  variant={getServiceTypeBadgeVariant(service.type)}
                   size="sm"
                 >
                   {getServiceTypeLabel(service.type)}
@@ -139,8 +167,20 @@ export default function ServiceDetailPage() {
               </div>
             </div>
 
-            {/* Edit button — always accessible */}
-            <div className="shrink-0">
+            {/* Actions */}
+            <div className="shrink-0 flex items-center gap-2">
+              {isAdmin && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => setNotifyOpen(true)}
+                  id="notify-team-btn"
+                >
+                  <Send className="w-4 h-4" />
+                  <span className="hidden xs:inline">Enviar mensaje</span>
+                  <span className="xs:hidden">Enviar</span>
+                </Button>
+              )}
               <Button
                 variant="secondary"
                 size="sm"
@@ -202,6 +242,19 @@ export default function ServiceDetailPage() {
         service={service}
         onClose={() => setEditOpen(false)}
         onSave={handleSaveEdit}
+      />
+
+      <ConfirmDialog
+        open={notifyOpen}
+        onClose={() => setNotifyOpen(false)}
+        onConfirm={handleNotifyTeam}
+        loading={notifying}
+        title="Enviar mensaje al equipo"
+        message={`Se enviará un WhatsApp a los ${service.team.length} integrante${service.team.length !== 1 ? "s" : ""} del equipo con el link de este servicio.`}
+        confirmLabel="Enviar"
+        confirmVariant="primary"
+        icon={Send}
+        iconClassName="bg-navy/5 text-navy"
       />
 
       {toast && <Toast {...toast} onClose={() => setToast(null)} />}

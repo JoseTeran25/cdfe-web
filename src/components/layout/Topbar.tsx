@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { Menu, Bell, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface TopbarProps {
   onMenuClick: () => void;
@@ -21,6 +22,8 @@ const pageTitles: Record<string, string> = {
 
 export function Topbar({ onMenuClick, sidebarCollapsed }: TopbarProps) {
   const pathname = usePathname();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "ADMIN";
 
   const title =
     Object.entries(pageTitles).find(([key]) =>
@@ -85,22 +88,26 @@ export function Topbar({ onMenuClick, sidebarCollapsed }: TopbarProps) {
           <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-gold rounded-full border-2 border-white pulse-dot" />
         </button>
 
-        {/* Avatar */}
-        <button
-          id="user-avatar-btn"
-          className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-xl hover:bg-navy/5 transition-colors group"
-          aria-label="Perfil de usuario"
-        >
-          <div className="w-7 h-7 rounded-full bg-navy flex items-center justify-center">
-            <span className="text-gold font-bold text-xs">JD</span>
-          </div>
-          <div className="hidden sm:block text-left">
-            <p className="text-xs font-semibold text-navy leading-none">
-              Cdfe Worship Sur
-            </p>
-            <p className="text-[10px] text-gray-400 mt-0.5">Director</p>
-          </div>
-        </button>
+        {/* Avatar — solo visible con sesión de administrador activa */}
+        {isAdmin && (
+          <button
+            id="user-avatar-btn"
+            className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-xl hover:bg-navy/5 transition-colors group"
+            aria-label="Perfil de usuario"
+          >
+            <div className="w-7 h-7 rounded-full bg-navy flex items-center justify-center">
+              <span className="text-gold font-bold text-xs">
+                {user!.name.slice(0, 2).toUpperCase()}
+              </span>
+            </div>
+            <div className="hidden sm:block text-left">
+              <p className="text-xs font-semibold text-navy leading-none">
+                {user!.name}
+              </p>
+              <p className="text-[10px] text-gray-400 mt-0.5">Administrador</p>
+            </div>
+          </button>
+        )}
       </div>
     </header>
   );
