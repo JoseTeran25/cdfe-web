@@ -2,6 +2,35 @@ import type { Song, User, Service, CreateSongDto, CreateUserDto, CreateServiceDt
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
 
+const TOKEN_KEY = 'cdfe_token';
+
+export function getToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    return window.localStorage.getItem(TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function setToken(token: string) {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(TOKEN_KEY, token);
+  } catch {
+    // localStorage no disponible (modo privado, etc.) — la sesión no persiste
+  }
+}
+
+export function clearToken() {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.removeItem(TOKEN_KEY);
+  } catch {
+    // no-op
+  }
+}
+
 export interface ServiceSongItem { id: string; order: number; songId: string; song: Song; }
 export interface UserServiceItem { id: string; userId: string; instrument: Instrument; user: User; }
 export interface ApiService extends Omit<Service, 'setlist' | 'team'> {
@@ -10,11 +39,20 @@ export interface ApiService extends Omit<Service, 'setlist' | 'team'> {
 }
 
 async function http<T>(path: string, init?: RequestInit): Promise<T> {
+  const token = getToken();
   const res = await fetch(`${BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...init?.headers },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...init?.headers,
+    },
     ...init,
   });
   if (!res.ok) {
+    if (res.status === 401 && typeof window !== 'undefined') {
+      clearToken();
+      window.dispatchEvent(new CustomEvent('cdfe:unauthorized'));
+    }
     const body = await res.json().catch(() => ({}));
     throw new Error(body.message ?? `Error ${res.status}`);
   }
@@ -26,6 +64,27 @@ export interface TopPlayedSong {
   song: Song;
   count: number;
 }
+
+export interface AuthUser {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  avatarUrl?: string;
+  instrument?: Instrument;
+  phone?: string;
+}
+
+export interface LoginResponse {
+  access_token: string;
+  user: AuthUser;
+}
+
+export const authApi = {
+  login: (email: string, password: string) =>
+    http<LoginResponse>('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
+  me: () => http<AuthUser>('/auth/me'),
+};
 
 export const songsApi = {
   getAll: (p?: { status?: SongStatus; search?: string }) => {
@@ -39,9 +98,10 @@ export const songsApi = {
   create: (d: CreateSongDto) => http<Song>('/songs', { method: 'POST', body: JSON.stringify(d) }),
   update: (id: string, d: Partial<CreateSongDto>) => http<Song>(`/songs/${id}`, { method: 'PATCH', body: JSON.stringify(d) }),
   remove: (id: string) => http<{ message: string }>(`/songs/${id}`, { method: 'DELETE' }),
-  getTopPlayed: (p?: { year?: number; serviceType?: ServiceType; limit?: number }) => {
+  getTopPlayed: (p?: { year?: number; month?: number; serviceType?: ServiceType; limit?: number }) => {
     const qs = new URLSearchParams();
     if (p?.year) qs.set('year', String(p.year));
+    if (p?.month) qs.set('month', String(p.month));
     if (p?.serviceType) qs.set('serviceType', p.serviceType);
     if (p?.limit) qs.set('limit', String(p.limit));
     const q = qs.toString();
@@ -104,4 +164,14 @@ export const servicesApi = {
     http<ApiService>(`/services/${sid}/team`, { method: 'POST', body: JSON.stringify({ userId, instrument }) }),
   removeMember: (sid: string, userId: string) =>
     http<ApiService>(`/services/${sid}/team/${userId}`, { method: 'DELETE' }),
+  notifyTeam: (sid: string, serviceUrl: string) =>
+    http<NotifyTeamResult>(`/services/${sid}/notify-team`, { method: 'POST', body: JSON.stringify({ serviceUrl }) }),
 };
+
+export interface NotifyTeamResult {
+  total: number;
+  sent: number;
+  skipped: number;
+  failed: number;
+  results: { userId: string; name: string; status: 'sent' | 'skipped' | 'failed'; reason?: string }[];
+}

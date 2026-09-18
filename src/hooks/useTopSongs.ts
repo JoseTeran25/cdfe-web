@@ -5,6 +5,7 @@ import type { ServiceType } from "@/types";
 
 export interface TopSongsFilters {
   year?: number;
+  month?: number;
   serviceType?: ServiceType;
 }
 
@@ -20,6 +21,7 @@ export function useTopSongs(filters: TopSongsFilters) {
         setError(null);
         const result = await songsApi.getTopPlayed({
           year: filters.year,
+          month: filters.year ? filters.month : undefined,
           serviceType: filters.serviceType,
           limit: 10,
         });
@@ -33,7 +35,7 @@ export function useTopSongs(filters: TopSongsFilters) {
     };
 
     fetch();
-  }, [filters.year, filters.serviceType]);
+  }, [filters.year, filters.month, filters.serviceType]);
 
   return { data, loading, error };
 }

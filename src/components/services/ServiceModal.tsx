@@ -8,7 +8,11 @@ import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { Button } from "@/components/ui/Button";
 
-const TYPE_OPTIONS = [{ value: "DOMINGO", label: "Domingo" }, { value: "MIERCOLES", label: "Miércoles" }];
+const TYPE_OPTIONS = [
+  { value: "DOMINGO", label: "Domingo" },
+  { value: "MIERCOLES", label: "Miércoles" },
+  { value: "JOVENES", label: "Jóvenes" },
+];
 const BLANK: CreateServiceDto = { date: "", type: "DOMINGO", title: "", notes: "" };
 
 interface Props {
