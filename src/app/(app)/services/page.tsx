@@ -31,7 +31,16 @@ export default function ServicesPage() {
   const handleSave = async (data: CreateServiceDto, id?: string) => {
     try {
       if (id) { await update(id, data); setToast({ type: "success", message: "Servicio actualizado" }); }
-      else { await create(data); setToast({ type: "success", message: "Servicio creado" }); }
+      else {
+        const created = await create(data);
+        const team = created.team.length;
+        setToast({
+          type: "success",
+          message: team > 0
+            ? `Servicio creado — ${team} asignacion${team !== 1 ? "es" : ""} desde la programación`
+            : "Servicio creado",
+        });
+      }
     } catch (e: any) { setToast({ type: "error", message: e.message }); throw e; }
   };
 

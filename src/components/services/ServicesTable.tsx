@@ -80,7 +80,7 @@ export function ServicesTable({ services, loading, onEdit, onDelete }: Props) {
                     </td>
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-1.5 text-gray-500">
-                        <Users className="w-3.5 h-3.5" /> {s.team.length}
+                        <Users className="w-3.5 h-3.5" /> {new Set(s.team.map((t) => t.userId)).size}
                       </div>
                     </td>
                     <td className="px-5 py-3.5">
@@ -141,7 +141,7 @@ export function ServicesTable({ services, loading, onEdit, onDelete }: Props) {
                   <Music2 className="w-3 h-3" /> {s.setlist.length}
                 </span>
                 <span className="flex items-center gap-1 text-xs text-gray-400">
-                  <Users className="w-3 h-3" /> {s.team.length}
+                  <Users className="w-3 h-3" /> {new Set(s.team.map((t) => t.userId)).size}
                 </span>
               </div>
 
