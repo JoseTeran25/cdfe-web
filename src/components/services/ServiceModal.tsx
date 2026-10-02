@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { Button } from "@/components/ui/Button";
+import { toEcuadorInputValue, fromEcuadorInputValue } from "@/lib/utils";
 
 const TYPE_OPTIONS = [
   { value: "DOMINGO", label: "Domingo" },
@@ -28,7 +29,7 @@ export function ServiceModal({ open, service, onClose, onSave }: Props) {
 
   useEffect(() => {
     setForm(service
-      ? { date: new Date(service.date).toISOString().slice(0, 16), type: service.type, title: service.title ?? "", notes: service.notes ?? "" }
+      ? { date: toEcuadorInputValue(service.date), type: service.type, title: service.title ?? "", notes: service.notes ?? "" }
       : BLANK
     );
   }, [service, open]);
@@ -39,7 +40,7 @@ export function ServiceModal({ open, service, onClose, onSave }: Props) {
     if (!form.date || !form.type) return;
     setSaving(true);
     try {
-      await onSave({ ...form, date: new Date(form.date).toISOString() }, service?.id);
+      await onSave({ ...form, date: fromEcuadorInputValue(form.date) }, service?.id);
       onClose();
     } finally { setSaving(false); }
   };
@@ -58,7 +59,7 @@ export function ServiceModal({ open, service, onClose, onSave }: Props) {
       }
     >
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Input label="Fecha y hora" required type="datetime-local" value={form.date} onChange={e => set("date", e.target.value)} />
+        <Input label="Fecha y hora" required type="datetime-local" hint="Hora de Ecuador (GMT-5)" value={form.date} onChange={e => set("date", e.target.value)} />
         <Select label="Tipo" required value={form.type} onChange={e => set("type", e.target.value as ServiceType)} options={TYPE_OPTIONS} />
         <Input label="Título" placeholder="Servicio Dominical" value={form.title ?? ""} onChange={e => set("title", e.target.value)} className="sm:col-span-2" />
         <Textarea label="Notas" placeholder="Observaciones..." value={form.notes ?? ""} onChange={e => set("notes", e.target.value)} className="sm:col-span-2" rows={3} />

@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { AlertCircle, ArrowLeft, Check, CheckCheck, Clock, MessageCircle, Send } from "lucide-react";
 import type { Conversation, Message, MessageStatus } from "@/types";
 import { Badge } from "@/components/ui/Badge";
-import { cn } from "@/lib/utils";
+import { cn, formatTime } from "@/lib/utils";
 
 interface Props {
   conversation: Conversation | null;
@@ -108,7 +108,7 @@ export function ChatThread({ conversation, messages, loading, sending, onSend, o
                   <p className="whitespace-pre-wrap break-words">{m.content}</p>
                   <div className={cn("flex items-center gap-1 mt-1", outbound ? "justify-end" : "justify-start")}>
                     <span className={cn("text-[10px]", outbound ? "text-white/60" : "text-gray-400")}>
-                      {new Date(m.createdAt).toLocaleTimeString("es-EC", { hour: "2-digit", minute: "2-digit" })}
+                      {formatTime(m.createdAt)}
                     </span>
                     {outbound && <StatusIcon status={m.status} />}
                   </div>

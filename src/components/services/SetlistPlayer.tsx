@@ -5,7 +5,7 @@ import {
   Music2, ChevronLeft, ChevronRight, Volume2, BookOpen, Hash, Activity, Video,
 } from "lucide-react";
 import { cn, getYoutubeVideoId } from "@/lib/utils";
-import { ChordViewer } from "@/components/songs/ChordViewer";
+import { ChordViewer, FullscreenViewer } from "@/components/songs/ChordViewer";
 import { MultitrackPlayer } from "@/components/songs/MultitrackPlayer";
 import { YoutubeEmbed } from "@/components/songs/YoutubeEmbed";
 import { Badge } from "@/components/ui/Badge";
@@ -20,6 +20,8 @@ export function SetlistPlayer({ songs }: Props) {
   // Per-song transposition state — preserved when switching tabs
   const [semitones, setSemitones] = useState<number[]>(() => songs.map(() => 0));
   const [mediaTab, setMediaTab] = useState<"tracks" | "video">("tracks");
+  // Vive aquí (y no en ChordViewer) para no cerrarse al cambiar de canción
+  const [fullscreen, setFullscreen] = useState(false);
 
   const currentSong = songs[activeIdx];
   const currentHasTracks = !!(currentSong?.sequenceUrl && currentSong.sequenceUrl.length > 0);
@@ -214,6 +216,7 @@ export function SetlistPlayer({ songs }: Props) {
               }
               title={song.title}
               artist={song.artist}
+              onOpenFullscreen={() => setFullscreen(true)}
             />
           ) : (
             <div className="flex flex-col items-center justify-center py-10 gap-2 text-center">
@@ -223,6 +226,27 @@ export function SetlistPlayer({ songs }: Props) {
           )}
         </div>
       </div>
+
+      {fullscreen && (
+        <FullscreenViewer
+          lyrics={song.lyrics ?? ""}
+          originalKey={song.key}
+          semitones={semitones[activeIdx]}
+          onSemitonesChange={val =>
+            setSemitones(prev => prev.map((s, j) => (j === activeIdx ? val : s)))
+          }
+          title={song.title}
+          artist={song.artist}
+          onClose={() => setFullscreen(false)}
+          navigation={{
+            index: activeIdx,
+            total: songs.length,
+            nextTitle: songs[activeIdx + 1]?.title,
+            onPrev: prev,
+            onNext: next,
+          }}
+        />
+      )}
     </div>
   );
 }

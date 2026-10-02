@@ -1,4 +1,5 @@
-import type { RosterRole, ServiceType } from "@/types";
+import type { RosterRole, ServiceType, User } from "@/types";
+import { toEcuadorDateKey } from "@/lib/utils";
 
 export interface RosterColumn {
   role: RosterRole;
@@ -104,8 +105,7 @@ export function formatRowService(date: string, type: ServiceType): string {
 }
 
 export function todayKey(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  return toEcuadorDateKey(new Date());
 }
 
 export function shiftMonth(month: string, delta: number): string {
@@ -119,3 +119,16 @@ export function formatMonthTitle(month: string): string {
   const name = new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString("es-ES", { month: "long", timeZone: "UTC" });
   return `${name.charAt(0).toUpperCase()}${name.slice(1)} ${y}`;
 }
+
+/** Primer nombre, como en el calendario; agrega la inicial del apellido si se repite. */
+export function shortName(user: { id: string; name: string }, users: User[]): string {
+  const [first, ...rest] = user.name.trim().split(/\s+/);
+  const clash = users.some((u) => u.id !== user.id && u.name.trim().split(/\s+/)[0] === first);
+  return clash && rest.length ? `${first} ${rest[0][0]}.` : first;
+}
+
+export const TYPE_ACCENT_CLASS: Record<ServiceType, string> = {
+  DOMINGO: "bg-navy",
+  MIERCOLES: "bg-gold",
+  JOVENES: "bg-violet-500",
+};

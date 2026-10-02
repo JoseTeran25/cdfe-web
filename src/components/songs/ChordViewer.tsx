@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { ChevronUp, ChevronDown, RotateCcw, Maximize2, X } from "lucide-react";
+import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, RotateCcw, Maximize2, X, Music2, PanelTopClose, PanelTopOpen } from "lucide-react";
 import { buildLines, transposeChord, type ParsedLine } from "@/lib/chordpro";
 import { cn } from "@/lib/utils";
 
@@ -14,6 +14,16 @@ interface Props {
   onSemitonesChange: (s: number) => void;
   title?: string;
   artist?: string;
+  /** Si se pasa, el botón "Pantalla completa" delega en el padre (ej. el setlist, que navega entre canciones). */
+  onOpenFullscreen?: () => void;
+}
+
+export interface FullscreenNavigation {
+  index: number;
+  total: number;
+  nextTitle?: string;
+  onPrev: () => void;
+  onNext: () => void;
 }
 
 function TransposeControls({
@@ -137,7 +147,9 @@ function LyricsLines({ lines, big }: { lines: ParsedLine[]; big?: boolean }) {
   );
 }
 
-function FullscreenViewer({
+const HEADER_HIDDEN_KEY = "cdfe_fullscreen_header_hidden";
+
+export function FullscreenViewer({
   lyrics,
   originalKey,
   semitones,
@@ -145,37 +157,98 @@ function FullscreenViewer({
   title,
   artist,
   onClose,
-}: Props & { onClose: () => void }) {
+  navigation,
+}: Omit<Props, "onOpenFullscreen"> & { onClose: () => void; navigation?: FullscreenNavigation }) {
   const lines = useMemo(() => buildLines(lyrics, semitones), [lyrics, semitones]);
   const currentKey = semitones !== 0 ? transposeChord(originalKey, semitones) : originalKey;
+  const isFirst = navigation ? navigation.index === 0 : true;
+  const isLast = navigation ? navigation.index === navigation.total - 1 : true;
+
+  // Se recuerda entre canciones y entre sesiones (solo se monta en cliente, tras un clic)
+  const [headerHidden, setHeaderHidden] = useState(() => {
+    try {
+      return localStorage.getItem(HEADER_HIDDEN_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleHeader = (hidden: boolean) => {
+    setHeaderHidden(hidden);
+    try {
+      localStorage.setItem(HEADER_HIDDEN_KEY, hidden ? "1" : "0");
+    } catch {
+      // sin almacenamiento disponible: solo dura esta sesión
+    }
+  };
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    document.addEventListener("keydown", onKey);
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
-      document.removeEventListener("keydown", onKey);
       document.body.style.overflow = prevOverflow;
     };
-  }, [onClose]);
+  }, []);
+
+  useEffect(() => {
+    // Flechas y Re Pág/Av Pág: también los envían los pedales Bluetooth pasa-páginas
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      if (!navigation) return;
+      if ((e.key === "ArrowRight" || e.key === "PageDown") && !isLast) {
+        e.preventDefault();
+        navigation.onNext();
+      }
+      if ((e.key === "ArrowLeft" || e.key === "PageUp") && !isFirst) {
+        e.preventDefault();
+        navigation.onPrev();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose, navigation, isFirst, isLast]);
 
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex flex-col bg-navy-gradient">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4 px-5 sm:px-8 py-4 sm:py-5 border-b border-white/10 shrink-0">
-        <div className="min-w-0">
+      {/* Header oculto: solo una pastilla flotante con canción y tono que lo vuelve a mostrar */}
+      {headerHidden && (
+        <button
+          onClick={() => toggleHeader(false)}
+          className="absolute top-3 right-3 z-10 flex items-center gap-2 h-10 pl-3 pr-3.5 rounded-full bg-white/10 border border-white/15 backdrop-blur-md text-white/85 text-sm shadow-lg transition-colors hover:bg-white/15 active:scale-95"
+          aria-label="Mostrar encabezado"
+        >
+          <PanelTopOpen className="w-4 h-4 shrink-0" />
+          {title && <span className="max-w-[45vw] truncate font-medium">{title}</span>}
+          <span className="font-display font-bold text-gold">{currentKey}</span>
+        </button>
+      )}
+
+      {/* Header — en celular el tono baja a una segunda línea para que el título se lea completo */}
+      {!headerHidden && (
+      <div className="px-5 sm:px-8 py-4 sm:py-5 border-b border-white/10 shrink-0 space-y-3 sm:space-y-0">
+       <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0 flex-1">
           {title && <h2 className="font-display font-bold text-xl sm:text-2xl text-white truncate">{title}</h2>}
           {artist && <p className="text-white/50 text-sm truncate">{artist}</p>}
         </div>
         <div className="flex items-center gap-3 sm:gap-5 shrink-0">
-          <TransposeControls
-            currentKey={currentKey}
-            originalKey={originalKey}
-            semitones={semitones}
-            onSemitonesChange={onSemitonesChange}
-            size="lg"
-          />
+          <div className="hidden sm:block">
+            <TransposeControls
+              currentKey={currentKey}
+              originalKey={originalKey}
+              semitones={semitones}
+              onSemitonesChange={onSemitonesChange}
+              size="lg"
+            />
+          </div>
+          <button
+            onClick={() => toggleHeader(true)}
+            className="p-2 rounded-xl text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+            aria-label="Ocultar encabezado"
+            title="Ocultar encabezado"
+          >
+            <PanelTopClose className="w-6 h-6" />
+          </button>
           <button
             onClick={onClose}
             className="p-2 rounded-xl text-white/70 hover:text-white hover:bg-white/10 transition-colors"
@@ -184,20 +257,77 @@ function FullscreenViewer({
             <X className="w-6 h-6" />
           </button>
         </div>
-      </div>
-
-      {/* Lyrics + chords — vertical scroll only, no horizontal overflow */}
-      <div className="flex-1 overflow-y-auto px-5 sm:px-10 py-8 sm:py-10">
-        <div className="max-w-4xl mx-auto">
-          <LyricsLines lines={lines} big />
+       </div>
+        <div className="sm:hidden">
+          <TransposeControls
+            currentKey={currentKey}
+            originalKey={originalKey}
+            semitones={semitones}
+            onSemitonesChange={onSemitonesChange}
+            size="lg"
+          />
         </div>
       </div>
+      )}
+
+      {/* Lyrics + chords — vertical scroll only; `key` vuelve arriba al cambiar de canción */}
+      <div
+        key={title}
+        className={cn("flex-1 overflow-y-auto px-5 sm:px-10 pb-8 sm:pb-10", headerHidden ? "pt-16" : "pt-8 sm:pt-10")}
+      >
+        <div className="max-w-4xl mx-auto">
+          {lyrics.trim() ? (
+            <LyricsLines lines={lines} big />
+          ) : (
+            <div className="flex flex-col items-center justify-center gap-3 py-24 text-center">
+              <Music2 className="w-10 h-10 text-white/20" />
+              <p className="text-white/50">Esta canción no tiene letra registrada</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Navegación entre canciones — botones grandes para el dedo en celular/atril */}
+      {navigation && navigation.total > 1 && (
+        <div className="shrink-0 border-t border-white/10 bg-navy-950/40 backdrop-blur-sm px-3 sm:px-6 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <div className="max-w-4xl mx-auto flex items-center gap-3">
+            <button
+              onClick={navigation.onPrev}
+              disabled={isFirst}
+              className="flex items-center justify-center gap-1.5 h-14 min-w-14 px-3 sm:px-5 rounded-2xl bg-white/10 text-white font-semibold transition-all hover:bg-white/15 active:scale-95 disabled:opacity-25 disabled:active:scale-100"
+              aria-label="Canción anterior"
+            >
+              <ChevronLeft className="w-7 h-7" />
+              <span className="hidden sm:inline">Anterior</span>
+            </button>
+
+            <div className="flex-1 min-w-0 text-center">
+              <p className="text-white/50 text-xs tabular-nums">
+                Canción {navigation.index + 1} de {navigation.total}
+              </p>
+              <p className="text-white text-sm font-medium truncate">
+                {isLast ? "Última canción" : `Sigue: ${navigation.nextTitle}`}
+              </p>
+            </div>
+
+            <button
+              onClick={navigation.onNext}
+              disabled={isLast}
+              className="flex items-center justify-center gap-1.5 h-14 min-w-14 px-3 sm:px-6 rounded-2xl bg-gold text-navy-950 font-semibold shadow-lg transition-all hover:brightness-105 active:scale-95 disabled:bg-white/10 disabled:text-white disabled:opacity-25 disabled:shadow-none disabled:active:scale-100"
+              aria-label="Siguiente canción"
+            >
+              <span className="hidden sm:inline">Siguiente</span>
+              <ChevronRight className="w-7 h-7" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>,
     document.body
   );
 }
 
-export function ChordViewer({ lyrics, originalKey, semitones, onSemitonesChange, title, artist }: Props) {
+export function ChordViewer({ lyrics, originalKey, semitones, onSemitonesChange, title, artist, onOpenFullscreen }: Props) {
   const [fullscreen, setFullscreen] = useState(false);
   const lines = useMemo(() => buildLines(lyrics, semitones), [lyrics, semitones]);
   const currentKey = semitones !== 0 ? transposeChord(originalKey, semitones) : originalKey;
@@ -213,7 +343,7 @@ export function ChordViewer({ lyrics, originalKey, semitones, onSemitonesChange,
           onSemitonesChange={onSemitonesChange}
         />
         <button
-          onClick={() => setFullscreen(true)}
+          onClick={() => (onOpenFullscreen ? onOpenFullscreen() : setFullscreen(true))}
           className="flex items-center gap-1.5 text-xs font-semibold text-navy px-3 py-1.5 rounded-xl border border-surface-border hover:border-navy/30 hover:bg-navy/5 transition-colors"
         >
           <Maximize2 className="w-3.5 h-3.5" />
