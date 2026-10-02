@@ -5,6 +5,43 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/** Toda la app muestra y captura horas en hora de Ecuador, sin importar dónde esté el navegador. */
+export const APP_TIMEZONE = "America/Guayaquil";
+const APP_UTC_OFFSET = "-05:00"; // Ecuador continental no tiene horario de verano
+
+function zonedParts(date: Date): Record<string, string> {
+  return Object.fromEntries(
+    new Intl.DateTimeFormat("en-CA", {
+      timeZone: APP_TIMEZONE,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+    })
+      .formatToParts(date)
+      .map((p) => [p.type, p.value])
+  );
+}
+
+/** Instante ISO → valor "YYYY-MM-DDTHH:mm" en hora de Ecuador, para un <input type="datetime-local">. */
+export function toEcuadorInputValue(iso: string): string {
+  const p = zonedParts(new Date(iso));
+  return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}`;
+}
+
+/** Valor "YYYY-MM-DDTHH:mm" interpretado como hora de Ecuador → instante ISO (UTC). */
+export function fromEcuadorInputValue(value: string): string {
+  return new Date(`${value}:00${APP_UTC_OFFSET}`).toISOString();
+}
+
+/** Fecha calendario YYYY-MM-DD en Ecuador. */
+export function toEcuadorDateKey(date: Date): string {
+  const p = zonedParts(date);
+  return `${p.year}-${p.month}-${p.day}`;
+}
+
 export function formatDate(
   dateString: string,
   options?: Intl.DateTimeFormatOptions
@@ -16,6 +53,7 @@ export function formatDate(
     month: "long",
     day: "numeric",
     ...options,
+    timeZone: APP_TIMEZONE,
   });
 }
 
@@ -24,6 +62,15 @@ export function formatDateShort(dateString: string): string {
   return date.toLocaleDateString("es-ES", {
     month: "short",
     day: "numeric",
+    timeZone: APP_TIMEZONE,
+  });
+}
+
+export function formatTime(dateString: string): string {
+  return new Date(dateString).toLocaleTimeString("es-EC", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: APP_TIMEZONE,
   });
 }
 
@@ -117,9 +164,11 @@ export function getYoutubeVideoId(url: string): string | null {
 }
 
 export function getDaysUntil(dateString: string): number {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const target = new Date(dateString);
-  target.setHours(0, 0, 0, 0);
-  return Math.ceil((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  const toUtcDay = (key: string) => {
+    const [y, m, d] = key.split("-").map(Number);
+    return Date.UTC(y, m - 1, d);
+  };
+  const today = toUtcDay(toEcuadorDateKey(new Date()));
+  const target = toUtcDay(toEcuadorDateKey(new Date(dateString)));
+  return Math.round((target - today) / (1000 * 60 * 60 * 24));
 }

@@ -15,7 +15,7 @@ export function Toast({ type, message, onClose }: Props) {
 
   return (
     <div className={cn(
-      "fixed bottom-6 right-6 z-[60] flex items-start gap-3 px-4 py-3 rounded-2xl shadow-xl border animate-fade-in-up max-w-sm",
+      "fixed bottom-6 right-6 z-[10000] flex items-start gap-3 px-4 py-3 rounded-2xl shadow-xl border animate-fade-in-up max-w-sm",
       type === "success" ? "bg-emerald-50 border-emerald-200" : "bg-red-50 border-red-200"
     )}>
       {type === "success"
