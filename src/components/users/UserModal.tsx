@@ -5,6 +5,7 @@ import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
+import { INSTRUMENT_OPTIONS } from "@/lib/utils";
 
 const ROLE_OPTIONS = [
   { value: "ADMIN", label: "Administrador" }, 
@@ -13,14 +14,7 @@ const ROLE_OPTIONS = [
   { value: "VOCALISTA", label: "Vocalista" },
   { value: "MULTIMEDIA", label: "Multimedia" },
 ];
-const INSTRUMENT_OPTIONS = [
-  { value: "", label: "Sin instrumento" }, { value: "GUITARRA", label: "Guitarra" },
-  { value: "BAJO", label: "Bajo" }, { value: "BATERIA", label: "Batería" },
-  { value: "TECLADO", label: "Teclado" }, { value: "PIANO", label: "Piano" },
-  { value: "VIOLIN", label: "Violín" }, { value: "TROMPETA", label: "Trompeta" },
-  { value: "VOZ_PRINCIPAL", label: "Voz Principal" }, { value: "VOZ_SECUNDARIA", label: "Voz Secundaria" },
-  { value: "MEDIOS", label: "Medios" }, { value: "OTRO", label: "Otro" },
-];
+const USER_INSTRUMENT_OPTIONS = [{ value: "", label: "Sin instrumento" }, ...INSTRUMENT_OPTIONS];
 
 type FormState = CreateUserDto & { password: string };
 const BLANK: FormState = { name: "", email: "", password: "", role: "MUSICO", instrument: undefined, phone: "" };
@@ -78,7 +72,7 @@ export function UserModal({ open, user, onClose, onSave }: Props) {
           type="password" placeholder={user ? "Dejar vacío para mantener" : "Mín. 6 caracteres"}
           value={form.password} onChange={e => set("password", e.target.value)} />
         <Select label="Rol" required value={form.role} onChange={e => set("role", e.target.value as Role)} options={ROLE_OPTIONS} />
-        <Select label="Instrumento" value={form.instrument ?? ""} onChange={e => set("instrument", e.target.value || undefined)} options={INSTRUMENT_OPTIONS} />
+        <Select label="Instrumento" value={form.instrument ?? ""} onChange={e => set("instrument", e.target.value || undefined)} options={USER_INSTRUMENT_OPTIONS} />
         <Input label="Teléfono / WhatsApp" placeholder="0987654321" hint="Para mensajería de WhatsApp" value={form.phone ?? ""}
           onChange={e => set("phone", e.target.value)} className="sm:col-span-2" />
       </div>

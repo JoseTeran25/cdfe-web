@@ -85,7 +85,7 @@ export function NextServiceCard({ service }: NextServiceCardProps) {
                 <span className="text-xs">Miembros</span>
               </div>
               <p className="font-display font-bold text-navy text-xl">
-                {service.team.length}
+                {new Set(service.team.map((t) => t.userId)).size}
               </p>
             </div>
             <div className="px-3">

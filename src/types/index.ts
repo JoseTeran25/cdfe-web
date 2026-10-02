@@ -21,7 +21,29 @@ export type Instrument =
   | "VOZ_PRINCIPAL"
   | "VOZ_SECUNDARIA"
   | "MEDIOS"
-  | "OTRO";
+  | "OTRO"
+  | "GUITARRA_ELECTRICA"
+  | "GUITARRA_ACUSTICA"
+  | "VOZ_HOMBRE"
+  | "VOZ_MUJER"
+  | "SONIDO"
+  | "LETRAS"
+  | "APOYO_MULTIMEDIA"
+  | "ORACION";
+
+export type RosterRole =
+  | "BATERIA"
+  | "BAJO"
+  | "GUITARRA_ELECTRICA"
+  | "GUITARRA_ACUSTICA_1"
+  | "GUITARRA_ACUSTICA_2"
+  | "PIANO"
+  | "VOCES_HOMBRES"
+  | "VOCES_MUJERES"
+  | "SONIDO"
+  | "LETRAS"
+  | "APOYO_MULTIMEDIA"
+  | "ORACION";
 
 // ---- Modelos Base ----
 
@@ -181,6 +203,29 @@ export interface CreateConversationDto {
   contactName: string;
   contactSource: ContactSource;
   initialMessage?: string;
+}
+
+// ---- Programación mensual ----
+
+export interface RosterAssignment {
+  id: string;
+  date: string; // YYYY-MM-DD
+  serviceType: ServiceType;
+  role: RosterRole;
+  userId: string;
+  user: { id: string; name: string };
+}
+
+export interface RosterServiceRef {
+  id: string;
+  date: string; // YYYY-MM-DD
+  type: ServiceType;
+  title?: string | null;
+}
+
+export interface RosterMonth {
+  assignments: RosterAssignment[];
+  services: RosterServiceRef[];
 }
 
 // ---- Dashboard ----

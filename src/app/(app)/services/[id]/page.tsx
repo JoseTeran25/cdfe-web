@@ -93,9 +93,8 @@ export default function ServiceDetailPage() {
   const availableSongs = songs.filter(
     (s) => !service.setlist.some((ss) => ss.songId === s.id)
   );
-  const availableUsers = (users as any[]).filter(
-    (u) => !service.team.some((t) => t.userId === u.id)
-  );
+  const availableUsers = users;
+  const memberCount = new Set(service.team.map((t) => t.userId)).size;
 
   const displayTitle = service.title ??
     formatDate(service.date, { weekday: "long", month: "long", day: "numeric" });
@@ -162,7 +161,7 @@ export default function ServiceDetailPage() {
                 </div>
                 <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gold/10 rounded-xl text-xs font-medium text-amber-700">
                   <Users className="w-3.5 h-3.5" />
-                  {service.team.length} miembro{service.team.length !== 1 ? "s" : ""}
+                  {memberCount} miembro{memberCount !== 1 ? "s" : ""}
                 </div>
               </div>
             </div>
@@ -250,7 +249,7 @@ export default function ServiceDetailPage() {
         onConfirm={handleNotifyTeam}
         loading={notifying}
         title="Enviar mensaje al equipo"
-        message={`Se enviará un WhatsApp a los ${service.team.length} integrante${service.team.length !== 1 ? "s" : ""} del equipo con el link de este servicio.`}
+        message={`Se enviará un WhatsApp a ${memberCount === 1 ? "1 integrante" : `los ${memberCount} integrantes`} del equipo con el link de este servicio.`}
         confirmLabel="Enviar"
         confirmVariant="primary"
         icon={Send}

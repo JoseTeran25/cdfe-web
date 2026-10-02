@@ -42,21 +42,32 @@ export function getRoleLabel(role: string): string {
   return labels[role] ?? role;
 }
 
+const INSTRUMENT_LABELS: Record<string, string> = {
+  GUITARRA: "Guitarra",
+  GUITARRA_ELECTRICA: "Guitarra eléctrica",
+  GUITARRA_ACUSTICA: "Guitarra acústica",
+  BAJO: "Bajo",
+  BATERIA: "Batería",
+  TECLADO: "Teclado",
+  PIANO: "Piano",
+  VIOLIN: "Violín",
+  TROMPETA: "Trompeta",
+  VOZ_PRINCIPAL: "Voz Principal",
+  VOZ_SECUNDARIA: "Voz Secundaria",
+  VOZ_HOMBRE: "Voz (hombres)",
+  VOZ_MUJER: "Voz (mujeres)",
+  MEDIOS: "Medios",
+  SONIDO: "Multimedia - Sonido",
+  LETRAS: "Multimedia - Letras",
+  APOYO_MULTIMEDIA: "Multimedia - Apoyo",
+  ORACION: "Oración",
+  OTRO: "Otro",
+};
+
+export const INSTRUMENT_OPTIONS = Object.entries(INSTRUMENT_LABELS).map(([value, label]) => ({ value, label }));
+
 export function getInstrumentLabel(instrument: string): string {
-  const labels: Record<string, string> = {
-    GUITARRA: "Guitarra",
-    BAJO: "Bajo",
-    BATERIA: "Batería",
-    TECLADO: "Teclado",
-    PIANO: "Piano",
-    VIOLIN: "Violín",
-    TROMPETA: "Trompeta",
-    VOZ_PRINCIPAL: "Voz Principal",
-    VOZ_SECUNDARIA: "Voz Secundaria",
-    MEDIOS: "Medios",
-    OTRO: "Otro",
-  };
-  return labels[instrument] ?? instrument;
+  return INSTRUMENT_LABELS[instrument] ?? instrument;
 }
 
 export function getServiceTypeLabel(type: string): string {

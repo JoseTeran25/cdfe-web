@@ -33,8 +33,8 @@ export function useServiceDetail(id: string) {
     return updated;
   };
 
-  const removeMember = async (userId: string) => {
-    const updated = await servicesApi.removeMember(id, userId);
+  const removeMember = async (memberId: string) => {
+    const updated = await servicesApi.removeMember(id, memberId);
     setService(updated);
     return updated;
   };

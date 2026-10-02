@@ -1,4 +1,4 @@
-import type { Song, User, Service, CreateSongDto, CreateUserDto, CreateServiceDto, SongStatus, ServiceType, Instrument, SupportRequest, CreateSupportRequestDto, Conversation, Message, MessageableContact, CreateConversationDto } from '@/types';
+import type { Song, User, Service, CreateSongDto, CreateUserDto, CreateServiceDto, SongStatus, ServiceType, Instrument, SupportRequest, CreateSupportRequestDto, Conversation, Message, MessageableContact, CreateConversationDto, RosterMonth, RosterRole, RosterAssignment } from '@/types';
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
 
@@ -162,10 +162,18 @@ export const servicesApi = {
     http<ApiService>(`/services/${sid}/setlist/${songId}`, { method: 'DELETE' }),
   addMember: (sid: string, userId: string, instrument: Instrument) =>
     http<ApiService>(`/services/${sid}/team`, { method: 'POST', body: JSON.stringify({ userId, instrument }) }),
-  removeMember: (sid: string, userId: string) =>
-    http<ApiService>(`/services/${sid}/team/${userId}`, { method: 'DELETE' }),
+  removeMember: (sid: string, memberId: string) =>
+    http<ApiService>(`/services/${sid}/team/${memberId}`, { method: 'DELETE' }),
   notifyTeam: (sid: string, serviceUrl: string) =>
     http<NotifyTeamResult>(`/services/${sid}/notify-team`, { method: 'POST', body: JSON.stringify({ serviceUrl }) }),
+};
+
+export const rosterApi = {
+  getMonth: (month: string) => http<RosterMonth>(`/roster?month=${month}`),
+  setCell: (d: { date: string; serviceType: ServiceType; role: RosterRole; userIds: string[] }) =>
+    http<RosterAssignment[]>('/roster/cell', { method: 'PUT', body: JSON.stringify(d) }),
+  applyToService: (serviceId: string) =>
+    http<{ added: number }>(`/roster/apply/${serviceId}`, { method: 'POST' }),
 };
 
 export interface NotifyTeamResult {

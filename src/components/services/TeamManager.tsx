@@ -6,21 +6,13 @@ import type { ApiService, UserServiceItem } from "@/lib/api";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Toast, type ToastData } from "@/components/ui/Toast";
-import { getInstrumentLabel, getRoleLabel } from "@/lib/utils";
-
-const INSTRUMENT_OPTIONS = [
-  { value: "GUITARRA", label: "Guitarra" }, { value: "BAJO", label: "Bajo" },
-  { value: "BATERIA", label: "Batería" }, { value: "TECLADO", label: "Teclado" },
-  { value: "PIANO", label: "Piano" }, { value: "VIOLIN", label: "Violín" },
-  { value: "TROMPETA", label: "Trompeta" }, { value: "VOZ_PRINCIPAL", label: "Voz Principal" },
-  { value: "VOZ_SECUNDARIA", label: "Voz Secundaria" }, { value: "MEDIOS", label: "Medios" },{ value: "OTRO", label: "Otro" },
-];
+import { getInstrumentLabel, getRoleLabel, INSTRUMENT_OPTIONS } from "@/lib/utils";
 
 interface Props {
   service: ApiService;
   availableUsers: User[];
   onAddMember: (userId: string, instrument: Instrument) => Promise<void>;
-  onRemoveMember: (userId: string) => Promise<void>;
+  onRemoveMember: (memberId: string) => Promise<void>;
 }
 
 export function TeamManager({ service, availableUsers, onAddMember, onRemoveMember }: Props) {
@@ -41,10 +33,10 @@ export function TeamManager({ service, availableUsers, onAddMember, onRemoveMemb
     } finally { setLoading(false); }
   };
 
-  const handleRemove = async (userId: string) => {
+  const handleRemove = async (memberId: string) => {
     setLoading(true);
     try {
-      await onRemoveMember(userId);
+      await onRemoveMember(memberId);
       setToast({ type: "success", message: "Miembro removido del servicio" });
     } catch (e: any) {
       setToast({ type: "error", message: e.message ?? "Error" });
@@ -58,7 +50,7 @@ export function TeamManager({ service, availableUsers, onAddMember, onRemoveMemb
           <Users className="w-4 h-4 text-amber-600" />
         </div>
         <h3 className="font-display font-semibold text-navy">
-          Equipo <span className="text-gray-400 font-normal text-sm">({service.team.length} miembros)</span>
+          Equipo <span className="text-gray-400 font-normal text-sm">({new Set(service.team.map((t) => t.userId)).size} miembros)</span>
         </h3>
       </div>
 
@@ -80,7 +72,7 @@ export function TeamManager({ service, availableUsers, onAddMember, onRemoveMemb
               </div>
               <Badge variant="navy" size="sm">{getInstrumentLabel(tm.instrument)}</Badge>
               <button
-                onClick={() => handleRemove(tm.userId)}
+                onClick={() => handleRemove(tm.id)}
                 disabled={loading}
                 className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
               >
